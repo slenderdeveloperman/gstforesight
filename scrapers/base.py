@@ -4,12 +4,13 @@ All scrapers inherit from this. Keeps ingest pipeline consistent.
 """
 
 import hashlib
+import io
 import json
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 import httpx
 from bs4 import BeautifulSoup
 
@@ -110,7 +111,6 @@ class BaseScraper(ABC):
         """Raise ValueError if the URL's domain isn't in the allowlist."""
         parsed = urlparse(url)
         host = parsed.netloc.lower().removeprefix("www.")
-        # Check exact match or subdomain match (e.g. sub.cbic.gov.in)
         if not any(host == d or host.endswith("." + d) for d in ALLOWED_DOMAINS):
             raise ValueError(f"fetch blocked — domain not in allowlist: {host!r}")
 
@@ -118,12 +118,57 @@ class BaseScraper(ABC):
         self._validate_url(url)
         r = self.client.get(url)
         r.raise_for_status()
-        # Guard against oversized responses before parsing
         if len(r.content) > MAX_RESPONSE_BYTES:
             raise ValueError(
                 f"response too large ({len(r.content):,} bytes) for {url!r}"
             )
         return BeautifulSoup(r.text, "html.parser")
+
+    def fetch_pdf_text(self, url: str) -> Optional[str]:
+        """Download a PDF and extract full text. Returns None if extraction fails."""
+        try:
+            self._validate_url(url)
+            r = self.client.get(url, timeout=60)
+            r.raise_for_status()
+            if len(r.content) > MAX_RESPONSE_BYTES:
+                return None
+
+            # pdfplumber first — handles most GOI text-based PDFs well
+            try:
+                import pdfplumber
+                with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+                    pages = [p.extract_text() or "" for p in pdf.pages]
+                text = "\n\n".join(pages).strip()
+                if text:
+                    return text
+            except Exception:
+                pass
+
+            # Fallback: pymupdf — better on some layouts and scanned docs
+            try:
+                import fitz
+                doc = fitz.open(stream=r.content, filetype="pdf")
+                text = "\n\n".join(page.get_text() for page in doc).strip()
+                if text:
+                    return text
+            except Exception:
+                pass
+
+        except Exception as e:
+            print(f"[pdf] extraction failed for {url}: {e}")
+        return None
+
+    def _find_pdf_url(self, page_url: str) -> Optional[str]:
+        """Fetch an HTML page and return the first PDF link found on it."""
+        try:
+            soup = self.fetch_html(page_url)
+            for link in soup.find_all("a", href=True):
+                href = link["href"]
+                if ".pdf" in href.lower():
+                    return href if href.startswith("http") else urljoin(page_url, href)
+        except Exception:
+            pass
+        return None
 
     def __del__(self):
         self.client.close()

@@ -25,6 +25,8 @@ def cmd_ingest(args):
         BudgetSpeechScraper,
     )
     from processors.tagger import TopicTagger
+    from processors.chunker import Chunker
+    from processors.embedder import Embedder
 
     SCRAPERS = {
         "cbic_circulars": CBICCircularScraper,
@@ -34,6 +36,8 @@ def cmd_ingest(args):
     }
 
     tagger = TopicTagger()
+    chunker = Chunker()
+    embedder = Embedder()
     to_run = list(SCRAPERS.keys()) if args.all else [args.source]
 
     for source_id in to_run:
@@ -57,6 +61,20 @@ def cmd_ingest(args):
                 if result:
                     tagged += 1
         print(f"[ingest] {source_id}: tagged {tagged} new documents")
+
+        # Chunk + embed new processed documents
+        chunked = 0
+        embedded = 0
+        for path in Path("data/processed").glob("*.json"):
+            if chunker.chunks_exist(path):
+                continue
+            chunks = chunker.chunk_and_save(path)
+            if chunks:
+                chunked += 1
+                new_vectors = embedder.embed_chunks(chunks)
+                embedded += new_vectors
+        if chunked:
+            print(f"[ingest] {source_id}: chunked {chunked} docs → {embedded} new vectors")
 
 
 def cmd_predict(args):
@@ -83,23 +101,41 @@ def cmd_predict(args):
 def cmd_status(args):
     raw_dir = Path("data/raw")
     processed_dir = Path("data/processed")
+    chunks_dir = Path("data/chunks")
+    vectors_dir = Path("data/vectors")
     predictions_dir = Path("data/predictions")
 
-    print("\n📊 gst-foresight status\n")
+    print("\ngst-foresight status\n")
 
     for source_dir in sorted(raw_dir.iterdir()) if raw_dir.exists() else []:
         count = len(list(source_dir.glob("*.json")))
-        print(f"  {source_dir.name:<30} {count:>4} raw docs")
+        full_text = sum(
+            1 for p in source_dir.glob("*.json")
+            if json.loads(p.read_text()).get("metadata", {}).get("full_text_extracted")
+        )
+        print(f"  {source_dir.name:<30} {count:>4} docs  ({full_text} with full text)")
 
     processed = len(list(processed_dir.glob("*.json"))) if processed_dir.exists() else 0
-    print(f"\n  processed: {processed} documents")
+    chunked = len(list(chunks_dir.glob("*.json"))) if chunks_dir.exists() else 0
+    print(f"\n  processed (tagged):   {processed}")
+    print(f"  chunked:              {chunked}")
+
+    if vectors_dir.exists():
+        try:
+            from processors.embedder import Embedder
+            stats = Embedder().stats()
+            print(f"  vectors (ChromaDB):   {stats['total_chunks']} chunks indexed")
+        except Exception:
+            print(f"  vectors:              dir exists (run ingest to index)")
+    else:
+        print(f"  vectors:              none yet — run ingest")
 
     latest = predictions_dir / "latest.json"
     if latest.exists():
         data = json.loads(latest.read_text())
-        print(f"  predictions: {data['prediction_count']} active (generated {data['generated_at'][:10]})")
+        print(f"\n  predictions:          {data['prediction_count']} active (generated {data['generated_at'][:10]})")
     else:
-        print("  predictions: none yet — run `python -m gst_foresight predict`")
+        print(f"\n  predictions:          none yet — run `python -m gst_foresight predict`")
 
 
 def main():

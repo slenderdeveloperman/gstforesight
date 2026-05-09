@@ -39,14 +39,29 @@ class CBICCircularScraper(BaseScraper):
 
                 date = self._parse_date(date_text)
 
+                full_url = url if url.startswith("http") else f"https://cbic.gov.in/{url.lstrip('/')}"
+                # Attempt full-text extraction from PDF; fall back to subject line
+                full_text = None
+                if full_url.lower().endswith(".pdf"):
+                    full_text = self.fetch_pdf_text(full_url)
+                else:
+                    pdf_url = self._find_pdf_url(full_url)
+                    if pdf_url:
+                        full_text = self.fetch_pdf_text(pdf_url)
+
                 docs.append(Document(
                     source_id=self.source_id,
                     doc_id=f"cbic_circ_{doc_id}",
                     title=f"Circular {circular_no}: {subject}",
-                    url=url if url.startswith("http") else f"https://cbic.gov.in/{url.lstrip('/')}",
+                    url=full_url,
                     date=date,
-                    content=subject,  # subject line is the primary signal; full text via PDF optional
-                    metadata={"circular_no": circular_no, "raw_date": date_text},
+                    content=full_text or subject,
+                    metadata={
+                        "circular_no": circular_no,
+                        "raw_date": date_text,
+                        "subject": subject,
+                        "full_text_extracted": full_text is not None,
+                    },
                 ))
         except Exception as e:
             print(f"[cbic_circulars] scrape error: {e}")
@@ -91,14 +106,21 @@ class GSTCouncilScraper(BaseScraper):
                 doc_id = f"gst_council_{meeting_no}_{Document.content_hash(href)}"
                 full_url = href if href.startswith("http") else f"https://gstcouncil.gov.in/{href.lstrip('/')}"
 
+                # Council meeting pages contain press release + minutes PDF links
+                full_text = self._find_pdf_url(full_url)
+                full_text = self.fetch_pdf_text(full_text) if full_text else None
+
                 docs.append(Document(
                     source_id=self.source_id,
                     doc_id=doc_id,
                     title=text or f"GST Council Meeting {meeting_no}",
                     url=full_url,
-                    date=None,  # date extracted by processor from content
-                    content=text,
-                    metadata={"meeting_no": meeting_no},
+                    date=None,
+                    content=full_text or text,
+                    metadata={
+                        "meeting_no": meeting_no,
+                        "full_text_extracted": full_text is not None,
+                    },
                 ))
         except Exception as e:
             print(f"[gst_council] scrape error: {e}")
@@ -134,15 +156,27 @@ class AARRulingScraper(BaseScraper):
                     continue
 
                 doc_id = f"aar_{Document.content_hash(title + date_text)}"
+                full_url = url if url.startswith("http") else f"https://cbic-gst.gov.in/{url.lstrip('/')}"
+
+                full_text = None
+                if full_url.lower().endswith(".pdf"):
+                    full_text = self.fetch_pdf_text(full_url)
+                else:
+                    pdf_url = self._find_pdf_url(full_url)
+                    if pdf_url:
+                        full_text = self.fetch_pdf_text(pdf_url)
 
                 docs.append(Document(
                     source_id=self.source_id,
                     doc_id=doc_id,
                     title=title,
-                    url=url if url.startswith("http") else f"https://cbic-gst.gov.in/{url.lstrip('/')}",
+                    url=full_url,
                     date=None,
-                    content=title,
-                    metadata={"raw_date": date_text},
+                    content=full_text or title,
+                    metadata={
+                        "raw_date": date_text,
+                        "full_text_extracted": full_text is not None,
+                    },
                 ))
         except Exception as e:
             print(f"[aar_rulings] scrape error: {e}")
@@ -189,14 +223,27 @@ class BudgetSpeechScraper(BaseScraper):
                 doc_id = f"budget_speech_{year}"
                 full_url = href if href.startswith("http") else f"https://indiabudget.gov.in/{href.lstrip('/')}"
 
+                # Budget speeches are PDFs — extract full text for signal detection
+                full_text = None
+                if full_url.lower().endswith(".pdf"):
+                    full_text = self.fetch_pdf_text(full_url)
+                else:
+                    pdf_url = self._find_pdf_url(full_url)
+                    if pdf_url:
+                        full_text = self.fetch_pdf_text(pdf_url)
+
                 docs.append(Document(
                     source_id=self.source_id,
                     doc_id=doc_id,
                     title=f"Union Budget Speech {year}",
                     url=full_url,
-                    date=datetime(int(year), 2, 1),  # budgets presented in February
-                    content=text,
-                    metadata={"year": year, "predictive_phrases": self.KNOWN_PREDICTIVE_PHRASES},
+                    date=datetime(int(year), 2, 1),
+                    content=full_text or text,
+                    metadata={
+                        "year": year,
+                        "predictive_phrases": self.KNOWN_PREDICTIVE_PHRASES,
+                        "full_text_extracted": full_text is not None,
+                    },
                 ))
         except Exception as e:
             print(f"[budget_speeches] scrape error: {e}")
