@@ -74,10 +74,10 @@ def cmd_ingest(args):
                 chunked += 1
                 new_vectors = embedder.embed_chunks(chunks)
                 embedded += new_vectors
-                pushed += embedder.push_to_upstash(chunks)
+                pushed += embedder.push_to_supabase(chunks)
         if chunked:
-            upstash_note = f", {pushed} pushed to Upstash" if pushed else ""
-            print(f"[ingest] {source_id}: chunked {chunked} docs → {embedded} new vectors{upstash_note}")
+            supabase_note = f", {pushed} pushed to Supabase" if pushed else ""
+            print(f"[ingest] {source_id}: chunked {chunked} docs → {embedded} new vectors{supabase_note}")
 
 
 def cmd_predict(args):

@@ -110,61 +110,65 @@ class Embedder:
             })
         return out
 
-    def push_to_upstash(self, chunks: list[dict]) -> int:
+    def push_to_supabase(self, chunks: list[dict]) -> int:
         """
-        Push chunks to Upstash Vector for the Edge Function to query.
-        The Upstash index must be configured with all-MiniLM-L6-v2 as its
-        built-in embedding model so both pipeline and edge use the same model.
+        Upsert chunks + pre-computed embeddings into Supabase (pgvector).
+        Called by the ingest pipeline after embed_chunks().
 
-        Requires env vars: UPSTASH_VECTOR_REST_URL, UPSTASH_VECTOR_REST_TOKEN
+        Requires env vars: SUPABASE_URL, SUPABASE_SERVICE_KEY
         No-ops silently if env vars are absent (safe for local dev).
         """
         import os
         import httpx as _httpx
 
-        url = os.environ.get("UPSTASH_VECTOR_REST_URL")
-        token = os.environ.get("UPSTASH_VECTOR_REST_TOKEN")
-        if not url or not token:
+        url = os.environ.get("SUPABASE_URL")
+        key = os.environ.get("SUPABASE_SERVICE_KEY")
+        if not url or not key:
             return 0
 
         headers = {
-            "Authorization": f"Bearer {token}",
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates",  # upsert on conflict
         }
 
-        # Use /upsert-data — Upstash embeds the text server-side
-        # (requires index configured with all-MiniLM-L6-v2)
-        vectors = [
+        # Compute embeddings for this batch
+        texts = [c["text"] for c in chunks]
+        embeddings = self.model.encode(
+            texts, show_progress_bar=False, convert_to_numpy=True
+        ).tolist()
+
+        rows = [
             {
                 "id": c["chunk_id"],
-                "data": c["text"],
-                "metadata": {
-                    "doc_id": c["doc_id"],
-                    "source_id": c["source_id"],
-                    "date": c.get("date") or "",
-                    "topic_tags": ",".join(c.get("topic_tags", [])),
-                    "chunk_index": c["chunk_index"],
-                },
+                "doc_id": c["doc_id"],
+                "source_id": c["source_id"],
+                "date": c.get("date") or None,
+                "topic_tags": ",".join(c.get("topic_tags", [])),
+                "chunk_index": c["chunk_index"],
+                "content": c["text"],
+                "embedding": emb,
             }
-            for c in chunks
+            for c, emb in zip(chunks, embeddings)
         ]
 
         upserted = 0
-        for i in range(0, len(vectors), 100):
-            batch = vectors[i : i + 100]
+        for i in range(0, len(rows), 100):
+            batch = rows[i : i + 100]
             try:
                 res = _httpx.post(
-                    f"{url}/upsert-data",
+                    f"{url}/rest/v1/chunks",
                     headers=headers,
                     json=batch,
-                    timeout=30,
+                    timeout=60,
                 )
-                if res.status_code == 200:
+                if res.status_code in (200, 201):
                     upserted += len(batch)
                 else:
-                    print(f"[upstash] upsert error: {res.status_code} {res.text[:200]}")
+                    print(f"[supabase] upsert error: {res.status_code} {res.text[:200]}")
             except Exception as e:
-                print(f"[upstash] request failed: {e}")
+                print(f"[supabase] request failed: {e}")
 
         return upserted
 

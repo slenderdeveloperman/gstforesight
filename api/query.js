@@ -3,44 +3,31 @@
  *
  * Flow:
  *   POST /api/query { query: string }
- *     → IP rate limit (Upstash Redis, 5 req / 30 days free tier)
- *     → Semantic search (Upstash Vector, all-MiniLM-L6-v2 built-in)
+ *     → check_and_increment_usage RPC  (rate limit: 5 req / 30 days, by IP)
+ *     → match_chunks RPC               (pgvector cosine search, top 8)
  *     → RAG prompt → Sarvam sarvam-m
  *     → { answer, sources, remaining_queries }
  *
  * Env vars required (set in Vercel dashboard):
- *   SARVAM_API_KEY
- *   UPSTASH_REDIS_REST_URL
- *   UPSTASH_REDIS_REST_TOKEN
- *   UPSTASH_VECTOR_REST_URL
- *   UPSTASH_VECTOR_REST_TOKEN
+ *   SUPABASE_URL          — https://xxxx.supabase.co
+ *   SUPABASE_ANON_KEY     — public anon key (safe to use from edge)
+ *   SARVAM_API_KEY        — api-subscription-key header value
  */
 
+import { createClient } from '@supabase/supabase-js';
 import { ipAddress } from '@vercel/functions';
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-import { Index } from '@upstash/vector';
 
 export const config = { runtime: 'edge' };
 
-// ─── Clients ─────────────────────────────────────────────────────────────────
+// ─── Supabase client ──────────────────────────────────────────────────────────
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
-
-// 5 queries per 30-day rolling window per IP (free tier)
-const ratelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(5, '30 d'),
-  prefix: 'gst_rl',
-});
-
-const vectorIndex = new Index({
-  url: process.env.UPSTASH_VECTOR_REST_URL,
-  token: process.env.UPSTASH_VECTOR_REST_TOKEN,
-});
+function getSupabase() {
+  return createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
+    { auth: { persistSession: false } },
+  );
+}
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -60,11 +47,9 @@ function json(body, status = 200) {
 function buildPrompt(query, chunks) {
   const context = chunks
     .map((c, i) => {
-      const meta = c.metadata ?? {};
-      const source = meta.source_id ?? 'unknown';
-      const date = meta.date ? ` (${meta.date.slice(0, 10)})` : '';
-      const topics = meta.topic_tags ? ` [${meta.topic_tags}]` : '';
-      return `[${i + 1}] ${source}${date}${topics}\n${c.data ?? ''}`;
+      const date = c.date ? ` (${c.date.slice(0, 10)})` : '';
+      const topics = c.topic_tags ? ` [${c.topic_tags}]` : '';
+      return `[${i + 1}] ${c.source_id}${date}${topics}\n${c.content}`;
     })
     .join('\n\n---\n\n');
 
@@ -93,11 +78,10 @@ Respond in this format:
 **Confidence note**: [any caveats about data coverage]`;
 }
 
-// ─── Handler ─────────────────────────────────────────────────────────────────
+// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default {
   async fetch(request) {
-    // Preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS });
     }
@@ -116,44 +100,85 @@ export default {
       return json({ error: 'query_too_short', message: 'Please enter a more specific question.' }, 400);
     }
 
-    const cleanQuery = query.trim().slice(0, 500); // cap input length
+    const cleanQuery = query.trim().slice(0, 500);
+    const supabase = getSupabase();
 
-    // Rate limit
+    // ── Rate limit ────────────────────────────────────────────────────────────
+    // Single atomic RPC: check window, reset if expired, increment, return result
+
     const ip = ipAddress(request) ?? '0.0.0.0';
-    const { success, remaining, reset } = await ratelimit.limit(ip);
-    if (!success) {
+    const { data: rl, error: rlErr } = await supabase.rpc('check_and_increment_usage', {
+      client_ip: ip,
+      free_limit: 5,
+    });
+
+    if (rlErr) {
+      console.error('[supabase] rate limit error:', rlErr.message);
+      // Fail open — don't block the user if rate limit DB is unreachable
+    } else if (rl && !rl.allowed) {
       return json(
         {
           error: 'rate_limited',
           message: 'You have used all 5 free queries for this month.',
-          reset_at: new Date(reset).toISOString(),
+          reset_at: rl.reset_at,
         },
         429,
       );
     }
 
-    // Semantic search — Upstash embeds the query using all-MiniLM-L6-v2
-    let chunks;
+    // ── Embed query ───────────────────────────────────────────────────────────
+    // Generate embedding for the query using the same model as the ingest pipeline.
+    // We call a small Supabase Edge Function or use Supabase's built-in
+    // text-embedding via the Transformers.js WASM route.
+    //
+    // Practical shortcut for V8 edge: call Supabase's /functions/v1/embed
+    // OR use the Supabase built-in vector embedding feature (if configured).
+    //
+    // For now we use the Supabase REST approach — pass raw text to match_chunks
+    // via a text-based RPC that handles embedding server-side using pg_trgm
+    // as a fallback, or configure Supabase's built-in AI embedding.
+    //
+    // Simplest working approach: embed via a POST to Supabase's embedding edge
+    // function (deployed alongside this project, see api/embed.js).
+
+    let embedding;
     try {
-      chunks = await vectorIndex.query({
-        data: cleanQuery,
-        topK: 8,
-        includeData: true,
-        includeMetadata: true,
+      const embedRes = await fetch(`${process.env.SUPABASE_URL}/functions/v1/embed`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: cleanQuery }),
       });
+      if (!embedRes.ok) throw new Error(`embed status ${embedRes.status}`);
+      ({ embedding } = await embedRes.json());
     } catch (e) {
-      console.error('[vector] query failed:', e);
+      console.error('[embed] failed:', e);
+      return json({ error: 'embed_error', message: 'Failed to process query.' }, 502);
+    }
+
+    // ── Vector search ─────────────────────────────────────────────────────────
+
+    const { data: chunks, error: searchErr } = await supabase.rpc('match_chunks', {
+      query_embedding: embedding,
+      match_count: 8,
+    });
+
+    if (searchErr) {
+      console.error('[supabase] vector search error:', searchErr.message);
       return json({ error: 'search_error', message: 'Vector search unavailable.' }, 502);
     }
 
-    if (!chunks.length) {
+    if (!chunks?.length) {
       return json({
         error: 'no_context',
-        message: 'No relevant documents found in the corpus. The ingest pipeline may not have run yet.',
+        message: 'No relevant documents found. The ingest pipeline may not have run yet.',
       });
     }
 
-    // Call Sarvam
+    // ── Sarvam ────────────────────────────────────────────────────────────────
+
     let sarvamRes;
     try {
       sarvamRes = await fetch('https://api.sarvam.ai/v1/chat/completions', {
@@ -183,8 +208,7 @@ export default {
     }
 
     if (!sarvamRes.ok) {
-      const errText = await sarvamRes.text();
-      console.error('[sarvam] error response:', errText);
+      console.error('[sarvam] error response:', await sarvamRes.text());
       return json({ error: 'llm_error', message: 'Failed to generate analysis.' }, 502);
     }
 
@@ -194,12 +218,12 @@ export default {
     return json({
       answer,
       sources: chunks.slice(0, 4).map((c) => ({
-        source_id: c.metadata?.source_id,
-        date: c.metadata?.date,
-        topic_tags: c.metadata?.topic_tags,
-        excerpt: (c.data ?? '').slice(0, 250),
+        source_id: c.source_id,
+        date: c.date,
+        topic_tags: c.topic_tags,
+        excerpt: (c.content ?? '').slice(0, 250),
       })),
-      remaining_queries: remaining,
+      remaining_queries: rl?.remaining ?? null,
       query: cleanQuery,
     });
   },
