@@ -92,39 +92,54 @@ function incQueryUsage() { localStorage.setItem(RL_KEY, String(getQueryUsage() +
 function Meta({ T, label, dot }) {
   const mono = `'IBM Plex Mono',monospace`;
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:7, fontFamily:mono, fontSize:9.5, color:T.text3, letterSpacing:'0.06em' }}>
-      {dot && <span style={{ width:6, height:6, borderRadius:'50%', background:T.success, animation:'gstBlink 2s ease-in-out infinite' }}/>}
+    <div style={{ display:'flex', alignItems:'center', gap:8, fontFamily:mono, fontSize:12, color:T.text3, letterSpacing:'0.06em' }}>
+      {dot && <span style={{ width:8, height:8, borderRadius:'50%', background:T.success, animation:'gstBlink 2s ease-in-out infinite' }}/>}
       <span>{label}</span>
     </div>
   );
 }
 
-function Pill({ T, label, accent, onClick }) {
+function Pill({ T, label, accent, muted, onClick }) {
+  const border = accent ? T.accent2 : muted ? T.border : T.border;
+  const color  = accent ? T.accent  : muted ? T.text3  : T.text2;
   return (
-    <span onClick={onClick} style={{ fontFamily:`'IBM Plex Mono',monospace`, fontSize:9.5, padding:'4px 10px', border:`1px solid ${accent ? T.accent2 : T.border}`, color:accent ? T.accent : T.text2, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>{label}</span>
+    <span onClick={onClick} style={{
+      fontFamily:`'IBM Plex Mono',monospace`, fontSize:12, padding:'6px 12px',
+      border:`1px ${muted ? 'dashed' : 'solid'} ${border}`,
+      color, letterSpacing:'0.08em', textTransform:'uppercase',
+      cursor: muted ? 'not-allowed' : 'pointer',
+      opacity: muted ? 0.6 : 1,
+    }} title={muted ? 'Coming soon' : undefined}>{label}{muted ? ' · soon' : ''}</span>
   );
 }
 
-function ColHeader({ T, title, right }) {
+function RuleLabel({ T, title, right }) {
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 16px', borderBottom:`1px solid ${T.border}`, background:T.bg2, flexShrink:0, fontFamily:`'IBM Plex Mono',monospace`, fontSize:10, color:T.text3, letterSpacing:'0.1em', textTransform:'uppercase' }}>
-      <span>{title}</span>
-      {right && (typeof right === 'string' ? <span style={{ color:T.accent2 }}>{right}</span> : right)}
+    <div style={{
+      display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'10px 16px 8px', borderBottom:`1px solid ${T.border}`, flexShrink:0,
+      fontFamily:`'IBM Plex Mono',monospace`, fontSize:10.5, color:T.text, letterSpacing:'0.16em', textTransform:'uppercase',
+    }}>
+      <span style={{ display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ width:4, height:4, background:T.accent, display:'inline-block' }}/>
+        {title}
+      </span>
+      {right}
     </div>
   );
 }
 
-function Stat({ T, label, value, accent }) {
+function Stat({ T, label, value, accent, fs={lab:9, val:13} }) {
   return (
     <div style={{ flex:1 }}>
-      <div style={{ fontFamily:`'IBM Plex Mono',monospace`, fontSize:9, color:T.text3, letterSpacing:'0.08em', marginBottom:3 }}>{label}</div>
-      <div style={{ fontFamily:`'IBM Plex Mono',monospace`, fontSize:13, color:accent || T.text }}>{value}</div>
+      <div style={{ fontFamily:`'IBM Plex Mono',monospace`, fontSize:fs.lab, color:T.text3, letterSpacing:'0.08em', marginBottom:3 }}>{label}</div>
+      <div style={{ fontFamily:`'IBM Plex Mono',monospace`, fontSize:fs.val, color:accent || T.text }}>{value}</div>
     </div>
   );
 }
 
-function SectionLabel({ T, children }) {
-  return <div style={{ fontFamily:`'IBM Plex Mono',monospace`, fontSize:9, color:T.text3, letterSpacing:'0.12em', margin:'18px 0 8px', textTransform:'uppercase' }}>{children}</div>;
+function SectionLabel({ T, children, fs=9 }) {
+  return <div style={{ fontFamily:`'IBM Plex Mono',monospace`, fontSize:fs, color:T.text3, letterSpacing:'0.12em', margin:'14px 0 6px', textTransform:'uppercase' }}>{children}</div>;
 }
 
 function Sparkline({ data, color, bg, h=24, w=80, stroke=1, dots=false }) {
@@ -167,32 +182,37 @@ function HistoryChart({ T, c, data, events }) {
 // ── ScreenChrome — shared header for all overlay screens ─────────────────────
 function ScreenChrome({ T, tweak, breadcrumb, sub, onBack, onViewPricing, children }) {
   const mono = `'IBM Plex Mono',monospace`;
+  const chromeBg = T.bg2;
+  const chromeEdge = `2px solid ${T.border2}`;
+  const chromeInsetHL = tweak.dark ? 'inset 0 1px 0 rgba(255,255,255,0.04)' : 'inset 0 1px 0 rgba(255,255,255,0.6)';
   return (
     <div style={{ width:'100%', height:'100%', background:T.bg, color:T.text, fontFamily:`'IBM Plex Sans',system-ui,sans-serif`, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
       <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:5, opacity:tweak.dark?1:0.4, background:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px)' }}/>
-      <header style={{ display:'flex', alignItems:'stretch', height:48, borderBottom:`1px solid ${T.border}`, background:T.bg2, flexShrink:0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12, padding:'0 18px', borderRight:`1px solid ${T.border}` }}>
-          <div style={{ width:24, height:24, border:`1.5px solid ${T.accent}`, color:T.accent, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:mono, fontSize:9, fontWeight:600 }}>GST</div>
-          <div style={{ lineHeight:1.1 }}>
-            <div style={{ fontFamily:mono, fontSize:11, fontWeight:600, letterSpacing:'0.14em', color:T.text }}>FORESIGHT</div>
-            <div style={{ fontFamily:mono, fontSize:8.5, letterSpacing:'0.1em', color:T.text3, textTransform:'uppercase' }}>Regulatory Intelligence</div>
+      <div style={{ background:chromeBg, flexShrink:0, borderBottom:chromeEdge, boxShadow:chromeInsetHL, position:'relative', zIndex:4 }}>
+        <header style={{ display:'flex', alignItems:'stretch', height:64 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14, padding:'0 22px', borderRight:`1px solid ${T.border}` }}>
+            <div style={{ width:34, height:34, border:`1.5px solid ${T.accent}`, color:T.accent, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:mono, fontSize:12, fontWeight:600, letterSpacing:'0.04em' }}>GST</div>
+            <div style={{ lineHeight:1.15 }}>
+              <div style={{ fontFamily:mono, fontSize:16, fontWeight:600, letterSpacing:'0.16em', color:T.text }}>FORESIGHT</div>
+              <div style={{ fontFamily:mono, fontSize:11, letterSpacing:'0.12em', color:T.text3, textTransform:'uppercase', marginTop:2 }}>Regulatory Intelligence</div>
+            </div>
           </div>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:14, padding:'0 18px', flex:1, fontFamily:mono, fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase' }}>
-          <span onClick={onBack} style={{ color:T.text3, cursor:'pointer' }}>← HOME</span>
-          {breadcrumb.map((b,i) => (
-            <React.Fragment key={i}>
-              <span style={{ color:T.border2 }}>/</span>
-              <span style={{ color:i===breadcrumb.length-1?T.accent:T.text3 }}>{b}</span>
-            </React.Fragment>
-          ))}
-          {sub && <span style={{ marginLeft:14, color:T.text3, letterSpacing:'0.04em', textTransform:'none', fontSize:10 }}>{sub}</span>}
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'0 18px', borderLeft:`1px solid ${T.border}` }}>
-          <span style={{ fontFamily:mono, fontSize:9.5, color:T.text2, padding:'4px 10px', border:`1px solid ${T.border}` }}>↗ GitHub</span>
-          <span onClick={onViewPricing} style={{ fontFamily:mono, fontSize:9.5, color:T.accent, padding:'4px 10px', border:`1px solid ${T.accent2}`, cursor:'pointer' }}>Pro</span>
-        </div>
-      </header>
+          <div style={{ display:'flex', alignItems:'center', gap:14, padding:'0 22px', flex:1, fontFamily:mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase' }}>
+            <span onClick={onBack} style={{ color:T.text3, cursor:'pointer' }}>← HOME</span>
+            {breadcrumb.map((b,i) => (
+              <React.Fragment key={i}>
+                <span style={{ color:T.border2 }}>/</span>
+                <span style={{ color:i===breadcrumb.length-1?T.accent:T.text3 }}>{b}</span>
+              </React.Fragment>
+            ))}
+            {sub && <span style={{ marginLeft:14, color:T.text3, letterSpacing:'0.04em', textTransform:'none', fontSize:12 }}>{sub}</span>}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:9, padding:'0 22px', borderLeft:`1px solid ${T.border}` }}>
+            <Pill T={T} label="API" muted/>
+            <Pill T={T} label="Pro" accent onClick={onViewPricing}/>
+          </div>
+        </header>
+      </div>
       {children}
     </div>
   );
@@ -627,7 +647,7 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
   const [activeId, setActiveId] = React.useState(predictions[0].id);
   const [filter, setFilter] = React.useState('all');
   const [query, setQuery] = React.useState('');
-  const [response, setResponse] = React.useState(null);
+  const [askState, setAskState] = React.useState('idle');
   const [queryCount, setQueryCount] = React.useState(getQueryUsage());
 
   const filtered = predictions.filter(p => {
@@ -644,34 +664,36 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
   const onAsk = async () => {
     if (query.trim().length < 4) return;
     if (queryCount >= 5) { onViewPricing && onViewPricing(); return; }
-    setResponse({ loading:true });
+    setAskState('loading');
     incQueryUsage();
     setQueryCount(c => c + 1);
     try {
-      const res = await fetch('/api/query', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body:JSON.stringify({ query:query.trim() }),
-      });
+      const res = await fetch('/api/query', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ query:query.trim() }) });
       const data = await res.json();
-      if (data.error) {
-        setResponse({ loading:false, errorMsg: data.message || 'An error occurred.' });
-      } else {
-        setResponse({
-          loading:false,
-          answer: data.answer,
-          sources: (data.sources||[]).map(s => s.source_id || String(s)),
-          remaining: data.remaining_queries,
-        });
-      }
-    } catch (e) {
-      setResponse({ loading:false, errorMsg:'Network error — please try again.' });
+      const responseObj = data.error
+        ? { loading:false, errorMsg: data.message || 'An error occurred.' }
+        : { loading:false, answer:data.answer, sources:(data.sources||[]).map(s=>s.source_id||String(s)) };
+      onViewQuery && onViewQuery({ query:query.trim(), response:responseObj });
+    } catch(e) {
+      onViewQuery && onViewQuery({ query:query.trim(), response:{ loading:false, errorMsg:'Network error — please try again.' } });
+    } finally {
+      setAskState('idle');
     }
   };
 
-  const mono = `'IBM Plex Mono',monospace`;
-  const sans = `'IBM Plex Sans',system-ui,sans-serif`;
-  const serif = `'Playfair Display',serif`;
+  const mono  = `'IBM Plex Mono',monospace`;
+  const sans  = `'IBM Plex Sans',system-ui,sans-serif`;
+
+  // Predictions table — ~25% smaller text
+  const tx = { id:8, topic:11, changeType:8, delta:8, probBig:18, probPct:8, horizon:8, colHead:8, spark:20 };
+  // Signal breakdown — ~25% smaller text
+  const sx = { probBig:33, probLab:7.5, topic:11, horizon:8, statLab:7, statVal:10, section:7.5, sigType:7.5, sigStr:8, sigDesc:9, docChip:7, watchBody:9, btn:8 };
+
+  const chromeBg = T.bg2;
+  const chromeEdge = `2px solid ${T.border2}`;
+  const chromeInsetHL = tweak.dark
+    ? 'inset 0 1px 0 rgba(255,255,255,0.04)'
+    : 'inset 0 1px 0 rgba(255,255,255,0.6)';
 
   const docCount = liveData?.doc_count || 2841;
   const updatedLabel = liveData
@@ -682,201 +704,180 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
     <div style={{ width:'100%', height:'100%', background:T.bg, color:T.text, fontFamily:sans, fontSize:D.fz, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
       <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:5, opacity:tweak.dark?1:0.4, background:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px)' }}/>
 
-      {/* HEADER */}
-      <header style={{ display:'flex', alignItems:'stretch', height:48, borderBottom:`1px solid ${T.border}`, background:T.bg2, flexShrink:0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12, padding:'0 18px', borderRight:`1px solid ${T.border}` }}>
-          <div style={{ width:24, height:24, border:`1.5px solid ${T.accent}`, color:T.accent, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:mono, fontSize:9, fontWeight:600, letterSpacing:'0.04em' }}>GST</div>
-          <div style={{ lineHeight:1.1 }}>
-            <div style={{ fontFamily:mono, fontSize:11, fontWeight:600, letterSpacing:'0.14em', color:T.text }}>FORESIGHT</div>
-            <div style={{ fontFamily:mono, fontSize:8.5, letterSpacing:'0.1em', color:T.text3, textTransform:'uppercase' }}>Regulatory Intelligence</div>
+      {/* TIER 1 — top chrome: header + ticker fused in one plate */}
+      <div style={{ background:chromeBg, flexShrink:0, borderBottom:chromeEdge, boxShadow:chromeInsetHL, position:'relative', zIndex:4 }}>
+        <header style={{ display:'flex', alignItems:'stretch', height:64 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14, padding:'0 22px', borderRight:`1px solid ${T.border}` }}>
+            <div style={{ width:34, height:34, border:`1.5px solid ${T.accent}`, color:T.accent, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:mono, fontSize:12, fontWeight:600, letterSpacing:'0.04em' }}>GST</div>
+            <div style={{ lineHeight:1.15 }}>
+              <div style={{ fontFamily:mono, fontSize:16, fontWeight:600, letterSpacing:'0.16em', color:T.text }}>FORESIGHT</div>
+              <div style={{ fontFamily:mono, fontSize:11, letterSpacing:'0.12em', color:T.text3, textTransform:'uppercase', marginTop:2 }}>Regulatory Intelligence</div>
+            </div>
           </div>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:24, padding:'0 18px', flex:1 }}>
-          <Meta T={T} dot label={updatedLabel}/>
-          <Meta T={T} label={`${docCount.toLocaleString()} DOCS INDEXED`}/>
-          <Meta T={T} label={`${predictions.length} ACTIVE PREDICTIONS`}/>
-          <Meta T={T} label="73% BACKTEST · 50–70% TIER"/>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'0 18px', borderLeft:`1px solid ${T.border}` }}>
-          <button onClick={onToggleDark} style={{ fontFamily:mono, fontSize:9, padding:'3px 8px', border:`1px solid ${T.border}`, color:T.text3, background:'transparent', cursor:'pointer', letterSpacing:'0.06em' }}>{tweak.dark?'LIGHT':'DARK'}</button>
-          <Pill T={T} label="↗ GitHub"/>
-          <Pill T={T} label="API"/>
-          <Pill T={T} label="Pro" accent onClick={onViewPricing}/>
-        </div>
-      </header>
+          <div style={{ display:'flex', alignItems:'center', gap:28, padding:'0 22px', flex:1 }}>
+            <Meta T={T} dot label={updatedLabel}/>
+            <Meta T={T} label={`${docCount.toLocaleString()} DOCS INDEXED`}/>
+            <Meta T={T} label={`${predictions.length} ACTIVE PREDICTIONS`}/>
+            <Meta T={T} label="73% BACKTEST · 50–70% TIER"/>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:9, padding:'0 22px', borderLeft:`1px solid ${T.border}` }}>
+            <button onClick={onToggleDark} style={{ fontFamily:mono, fontSize:9, padding:'3px 8px', border:`1px solid ${T.border}`, color:T.text3, background:'transparent', cursor:'pointer', letterSpacing:'0.06em' }}>{tweak.dark?'LIGHT':'DARK'}</button>
+            <Pill T={T} label="API" muted/>
+            <Pill T={T} label="Pro" accent onClick={onViewPricing}/>
+          </div>
+        </header>
 
-      {/* TICKER */}
-      <div style={{ height:26, display:'flex', alignItems:'stretch', borderBottom:`1px solid ${T.border}`, background:T.bg2, overflow:'hidden', flexShrink:0, position:'relative' }}>
-        <div style={{ fontFamily:mono, fontSize:9, color:T.accent, padding:'0 14px', borderRight:`1px solid ${T.border}`, height:'100%', display:'flex', alignItems:'center', letterSpacing:'0.16em', flexShrink:0, background:T.bg2, position:'relative', zIndex:2 }}>● LIVE SIGNALS</div>
-        <div style={{ position:'relative', flex:1, overflow:'hidden', height:'100%' }}>
-          <div style={{ display:'flex', gap:0, animation:'gstTicker 60s linear infinite', whiteSpace:'nowrap', height:'100%', alignItems:'center' }}>
-            {[...GST_TICKER, ...GST_TICKER].map((t,i) => (
-              <span key={i} style={{ fontFamily:mono, fontSize:10, padding:'0 18px', color:T.text2, display:'flex', alignItems:'center', gap:10 }}>
-                <span style={{ color:T.text3 }}>{t.time}</span> {t.text} <span style={{ color:T.border2 }}>◆</span>
-              </span>
-            ))}
+        {/* TICKER inside chrome plate — separated by single hairline */}
+        <div style={{ height:36, display:'flex', alignItems:'stretch', borderTop:`1px solid ${T.border}`, overflow:'hidden', position:'relative' }}>
+          <div style={{ fontFamily:mono, fontSize:13, color:T.accent, padding:'0 18px', borderRight:`1px solid ${T.border}`, height:'100%', display:'flex', alignItems:'center', letterSpacing:'0.16em', flexShrink:0, background:chromeBg, position:'relative', zIndex:2 }}>● LIVE SIGNALS</div>
+          <div style={{ position:'relative', flex:1, overflow:'hidden', height:'100%' }}>
+            <div style={{ display:'flex', gap:0, animation:'gstTicker 60s linear infinite', whiteSpace:'nowrap', height:'100%', alignItems:'center' }}>
+              {[...GST_TICKER, ...GST_TICKER].map((t,i) => (
+                <span key={i} style={{ fontFamily:mono, fontSize:13, padding:'0 22px', color:T.text2, display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ color:T.text3 }}>{t.time}</span> {t.text} <span style={{ color:T.border2 }}>◆</span>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* MAIN — 3 columns */}
-      <div style={{ flex:1, display:'grid', gridTemplateColumns:'320px 1fr 380px', minHeight:0 }}>
+      {/* TIER 2 — content surface: 2-column */}
+      <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 380px', minHeight:0, background:T.bg }}>
 
-        {/* LEFT: Query */}
-        <div style={{ borderRight:`1px solid ${T.border}`, display:'flex', flexDirection:'column', minHeight:0 }}>
-          <ColHeader T={T} title="Ask the corpus" right={`${Math.max(0,5-queryCount)}/5 free`}/>
-          <div style={{ padding:'16px 16px 0' }}>
-            <div style={{ fontFamily:serif, fontSize:18, fontStyle:'italic', color:T.text, lineHeight:1.25, marginBottom:8 }}>Foresight on <span style={{ color:T.accent }}>demand.</span></div>
-            <div style={{ fontFamily:mono, fontSize:9.5, color:T.text3, letterSpacing:'0.04em', marginBottom:14, lineHeight:1.6 }}>Type a question. Get a probability, horizon and the signals driving it — grounded in {docCount.toLocaleString()} indexed documents.</div>
-            <div style={{ display:'flex', flexDirection:'column', border:`1px solid ${T.border2}`, background:T.bg }}>
-              <textarea
-                value={query} onChange={e => setQuery(e.target.value)}
-                onKeyDown={e => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); onAsk(); } }}
-                placeholder="e.g. What's the outlook for ITC on marketing expenses?"
-                style={{ background:'transparent', border:'none', outline:'none', resize:'none', fontFamily:sans, fontSize:D.fz, color:T.text, padding:'12px 12px', height:84, caretColor:T.accent }}
-              />
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', borderTop:`1px solid ${T.border}`, padding:'6px 6px 6px 10px' }}>
-                <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.06em' }}>{query.length}/500</span>
-                <button onClick={onAsk} disabled={queryCount >= 5} style={{ fontFamily:mono, fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', color:T.bg, background:queryCount>=5?T.border2:T.accent2, border:'none', padding:'7px 14px', cursor:queryCount>=5?'not-allowed':'pointer' }}>Analyse →</button>
-              </div>
-            </div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:10 }}>
-              {['ITC on marketing','Co-working spaces','RCM expansion','Section 16(4)'].map(s => (
-                <button key={s} onClick={() => setQuery(`What's the outlook for ${s}?`)} style={{ fontFamily:mono, fontSize:9.5, padding:'4px 8px', background:T.bg2, border:`1px solid ${T.border}`, color:T.text2, cursor:'pointer', letterSpacing:'0.04em' }}>{s}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Response */}
-          <div style={{ padding:16, overflowY:'auto', flex:1, minHeight:0 }}>
-            {!response && (
-              <div style={{ borderTop:`1px dashed ${T.border}`, paddingTop:14, fontFamily:mono, fontSize:9.5, color:T.text3, letterSpacing:'0.06em', lineHeight:1.7 }}>
-                <div style={{ marginBottom:6, color:T.accent2, letterSpacing:'0.12em' }}>RECENT QUERIES</div>
-                {['Will GST on co-working spaces change?','Risk of ITC reversal rules tightening?','Is e-invoicing threshold dropping to ₹1 cr?','SaaS classification — goods or services?'].map(q => (
-                  <div key={q} onClick={() => setQuery(q)} style={{ padding:'5px 0', color:T.text2, borderBottom:`1px solid ${T.border}`, cursor:'pointer' }}>
-                    <span style={{ color:T.text3 }}>›</span> {q}
-                  </div>
+        {/* PREDICTIONS */}
+        <div style={{ display:'flex', flexDirection:'column', minHeight:0, borderRight:`1px solid ${T.border}` }}>
+          <RuleLabel T={T}
+            title={<>Predictions <span style={{ color:T.text3, marginLeft:8 }}>·</span> <span style={{ color:T.text2, marginLeft:8 }}>{filtered.length} ranked</span></>}
+            right={
+              <div style={{ display:'flex', gap:0 }}>
+                {[['all','ALL'],['council','COUNCIL'],['budget','BUDGET'],['high','≥70%'],['movers','MOVERS']].map(([k,l]) => (
+                  <button key={k} onClick={() => setFilter(k)} style={{ fontFamily:mono, fontSize:9, letterSpacing:'0.1em', padding:'3px 9px', border:`1px solid ${filter===k?T.accent2:'transparent'}`, color:filter===k?T.accent:T.text3, background:filter===k?`rgba(200,184,106,0.06)`:'transparent', cursor:'pointer' }}>{l}</button>
                 ))}
               </div>
-            )}
-            {response?.loading && (
-              <div style={{ borderTop:`1px solid ${T.accent2}`, marginTop:14, paddingTop:14, fontFamily:mono, fontSize:10, color:T.accent, letterSpacing:'0.08em', animation:'gstBlink 1s step-end infinite' }}>
-                EMBEDDING QUERY · RETRIEVING TOP-8 CHUNKS_
-              </div>
-            )}
-            {response && !response.loading && (
-              <div style={{ borderTop:`1px solid ${T.accent2}`, marginTop:14, paddingTop:14 }}>
-                <div style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.12em', marginBottom:6 }}>FORESIGHT RESPONSE</div>
-                {response.errorMsg ? (
-                  <div style={{ fontFamily:mono, fontSize:10, color:T.danger, letterSpacing:'0.04em' }}>{response.errorMsg}</div>
-                ) : (
-                  <>
-                    <div style={{ fontSize:12, color:T.text2, lineHeight:1.7, marginBottom:10 }}>{response.answer}</div>
-                    {response.sources?.length > 0 && (
-                      <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:8, paddingTop:8, borderTop:`1px solid ${T.border}` }}>
-                        <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', marginRight:4 }}>SOURCES</span>
-                        {response.sources.map(s => (
-                          <span key={s} onClick={() => onViewSource && onViewSource(s)} style={{ fontFamily:mono, fontSize:9, color:T.text2, padding:'2px 6px', border:`1px solid ${T.border}`, background:T.bg3, cursor:'pointer' }}>{s}</span>
-                        ))}
-                      </div>
-                    )}
-                    <button onClick={onViewQuery} style={{ fontFamily:mono, fontSize:9.5, padding:'6px 10px', border:`1px solid ${T.border2}`, color:T.accent, background:'transparent', cursor:'pointer', letterSpacing:'0.06em', marginTop:10 }}>Full breakdown →</button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* CENTER: Predictions */}
-        <div style={{ display:'flex', flexDirection:'column', minHeight:0, borderRight:`1px solid ${T.border}` }}>
-          <ColHeader T={T} title={`Predictions — ${filtered.length} ranked by probability`} right={
-            <div style={{ display:'flex', gap:0 }}>
-              {[['all','ALL'],['council','COUNCIL'],['budget','BUDGET'],['high','≥70%'],['movers','MOVERS']].map(([k,l]) => (
-                <button key={k} onClick={() => setFilter(k)} style={{ fontFamily:mono, fontSize:9, letterSpacing:'0.1em', padding:'3px 9px', border:`1px solid ${filter===k?T.accent2:'transparent'}`, color:filter===k?T.accent:T.text3, background:filter===k?`rgba(200,184,106,0.06)`:'transparent', cursor:'pointer' }}>{l}</button>
-              ))}
-            </div>
-          }/>
-
-          <div style={{ display:'grid', gridTemplateColumns:'56px 1fr 60px 84px 110px 90px', alignItems:'center', padding:'8px 16px', borderBottom:`1px solid ${T.border}`, background:T.bg2, fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', flexShrink:0 }}>
+            }
+          />
+          <div style={{ display:'grid', gridTemplateColumns:'48px 1fr 50px 72px 96px 80px', alignItems:'center', padding:'6px 16px 7px', borderBottom:`1px solid ${T.border}`, fontFamily:mono, fontSize:tx.colHead, color:T.text3, letterSpacing:'0.1em', flexShrink:0 }}>
             <div>ID</div><div>TOPIC / CHANGE TYPE</div><div style={{ textAlign:'right' }}>Δ 30D</div><div style={{ textAlign:'right' }}>PROB</div><div>HORIZON</div><div>SIGNALS</div>
           </div>
-
           <div style={{ overflowY:'auto', flex:1 }}>
             {filtered.map(p => {
               const isActive = p.id === activeId;
               const c = probColor(p);
               return (
-                <div key={p.id} onClick={() => setActiveId(p.id)} onDoubleClick={() => onViewPrediction && onViewPrediction(p)} style={{ display:'grid', gridTemplateColumns:'56px 1fr 60px 84px 110px 90px', alignItems:'center', padding:D.rowPad, borderBottom:`1px solid ${T.border}`, background:isActive?(tweak.dark?'rgba(200,184,106,0.06)':'rgba(154,138,58,0.08)'):'transparent', borderLeft:isActive?`2px solid ${T.accent}`:`2px solid transparent`, cursor:'pointer', transition:'background .12s' }}>
-                  <div style={{ fontFamily:mono, fontSize:9.5, color:T.text3, letterSpacing:'0.04em' }}>{p.id}</div>
+                <div key={p.id}
+                  onClick={() => setActiveId(p.id)}
+                  onDoubleClick={() => onViewPrediction && onViewPrediction(p)}
+                  style={{ display:'grid', gridTemplateColumns:'48px 1fr 50px 72px 96px 80px', alignItems:'center', padding:tweak.density==='compact'?'8px 16px':'13px 16px', borderBottom:`1px solid ${T.border}`, background:isActive?(tweak.dark?'rgba(200,184,106,0.06)':'rgba(154,138,58,0.08)'):'transparent', borderLeft:isActive?`2px solid ${T.accent}`:`2px solid transparent`, cursor:'pointer', transition:'background .12s' }}>
+                  <div style={{ fontFamily:mono, fontSize:tx.id, color:T.text3, letterSpacing:'0.04em' }}>{p.id}</div>
                   <div>
-                    <div style={{ fontSize:D.fzL, fontWeight:500, color:isActive?T.accent:T.text, lineHeight:1.3, marginBottom:3 }}>{p.topic_label}</div>
-                    <div style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.06em', textTransform:'uppercase' }}>{p.change_type}</div>
+                    <div style={{ fontSize:tx.topic, fontWeight:500, color:isActive?T.accent:T.text, lineHeight:1.3, marginBottom:2 }}>{p.topic_label}</div>
+                    <div style={{ fontFamily:mono, fontSize:tx.changeType, color:T.text3, letterSpacing:'0.06em', textTransform:'uppercase' }}>{p.change_type}</div>
                   </div>
-                  <div style={{ textAlign:'right', fontFamily:mono, fontSize:11, color:(p.delta||0)>0?T.danger:(p.delta||0)<0?T.success:T.text3 }}>{fmtDelta(p.delta||0)}</div>
+                  <div style={{ textAlign:'right', fontFamily:mono, fontSize:tx.delta, color:(p.delta||0)>0?T.danger:(p.delta||0)<0?T.success:T.text3 }}>{fmtDelta(p.delta||0)}</div>
                   <div style={{ textAlign:'right' }}>
-                    <div style={{ fontFamily:mono, fontSize:D.fzXL, color:c, fontWeight:600, lineHeight:1 }}>{p.probability}<span style={{ fontSize:11, color:T.text3 }}>%</span></div>
-                    <div style={{ height:D.barH, background:T.bg3, marginTop:5 }}>
+                    <div style={{ fontFamily:mono, fontSize:tx.probBig, color:c, fontWeight:600, lineHeight:1 }}>{p.probability}<span style={{ fontSize:tx.probPct, color:T.text3 }}>%</span></div>
+                    <div style={{ height:2, background:T.bg3, marginTop:4 }}>
                       <div style={{ height:'100%', width:`${p.probability}%`, background:c }}/>
                     </div>
                   </div>
-                  <div style={{ fontFamily:mono, fontSize:9.5, color:T.text2, letterSpacing:'0.04em' }}>{p.horizon_label}</div>
-                  <Sparkline data={p.spark||[p.probability]} color={c} bg={T.bg3} h={D.rowH-12}/>
+                  <div style={{ fontFamily:mono, fontSize:tx.horizon, color:T.text2, letterSpacing:'0.04em' }}>{p.horizon_label}</div>
+                  <Sparkline data={p.spark||[p.probability]} color={c} bg="transparent" h={tx.spark}/>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* RIGHT: Detail */}
+        {/* SIGNAL DETAIL */}
         <div style={{ overflowY:'auto', minHeight:0 }}>
-          <ColHeader T={T} title={`Signal breakdown · ${active.id}`}/>
-          <div style={{ padding:18 }}>
-            <div style={{ display:'flex', alignItems:'baseline', gap:10 }}>
-              <div style={{ fontFamily:mono, fontSize:44, color:probColor(active), fontWeight:600, lineHeight:1 }}>{active.probability}%</div>
-              <div style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em' }}>PROBABILITY</div>
+          <RuleLabel T={T}
+            title={<>Signal breakdown <span style={{ color:T.text3, marginLeft:8 }}>·</span> <span style={{ color:T.accent2, marginLeft:8 }}>{active.id}</span></>}
+          />
+          <div style={{ padding:16 }}>
+            <div style={{ display:'flex', alignItems:'baseline', gap:8 }}>
+              <div style={{ fontFamily:mono, fontSize:sx.probBig, color:probColor(active), fontWeight:600, lineHeight:1 }}>{active.probability}%</div>
+              <div style={{ fontFamily:mono, fontSize:sx.probLab, color:T.text3, letterSpacing:'0.1em' }}>PROBABILITY</div>
             </div>
-            <div style={{ fontSize:14, color:T.text, fontWeight:500, marginTop:12, lineHeight:1.3 }}>{active.topic_label}</div>
-            <div style={{ fontFamily:mono, fontSize:10, color:T.accent, letterSpacing:'0.06em', marginTop:6 }}>⏳ {active.horizon_label}</div>
-            <div style={{ display:'flex', gap:16, marginTop:14, paddingTop:14, borderTop:`1px solid ${T.border}` }}>
-              <Stat T={T} label="Δ 30 days" value={fmtDelta(active.delta||0)} accent={(active.delta||0)>0?T.danger:T.success}/>
-              <Stat T={T} label="Signals" value={active.signals.length}/>
-              <Stat T={T} label="Change" value={active.change_type}/>
+            <div style={{ fontSize:sx.topic, color:T.text, fontWeight:500, marginTop:10, lineHeight:1.3 }}>{active.topic_label}</div>
+            <div style={{ fontFamily:mono, fontSize:sx.horizon, color:T.accent, letterSpacing:'0.06em', marginTop:4 }}>⏳ {active.horizon_label}</div>
+            <div style={{ display:'flex', gap:12, marginTop:12, paddingTop:12, borderTop:`1px solid ${T.border}` }}>
+              <Stat T={T} fs={{lab:sx.statLab, val:sx.statVal}} label="Δ 30 days" value={fmtDelta(active.delta||0)} accent={(active.delta||0)>0?T.danger:T.success}/>
+              <Stat T={T} fs={{lab:sx.statLab, val:sx.statVal}} label="Signals" value={active.signals.length}/>
+              <Stat T={T} fs={{lab:sx.statLab, val:sx.statVal}} label="Change" value={active.change_type}/>
             </div>
 
-            <div style={{ marginTop:20 }}>
-              <SectionLabel T={T}>12-WEEK PROBABILITY</SectionLabel>
-              <div style={{ background:T.bg2, border:`1px solid ${T.border}`, padding:14, height:84 }}>
-                <Sparkline data={active.spark||[active.probability]} color={T.accent} bg="transparent" h={56} stroke={1.5} dots/>
+            <div style={{ marginTop:16 }}>
+              <SectionLabel T={T} fs={sx.section}>12-WEEK PROBABILITY</SectionLabel>
+              <div style={{ background:T.bg2, border:`1px solid ${T.border}`, padding:10, height:60 }}>
+                <Sparkline data={active.spark||[active.probability]} color={T.accent} bg="transparent" h={40} stroke={1.5} dots/>
               </div>
             </div>
 
-            <SectionLabel T={T}>SIGNALS</SectionLabel>
+            <SectionLabel T={T} fs={sx.section}>SIGNALS</SectionLabel>
             {active.signals.map((s,i) => (
-              <div key={i} style={{ background:T.bg2, border:`1px solid ${T.border}`, padding:12, marginBottom:8 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6 }}>
-                  <div style={{ fontFamily:mono, fontSize:9.5, color:T.accent2, letterSpacing:'0.08em', textTransform:'uppercase' }}>{GST_SIGNAL_LABEL[s.type]||s.type}</div>
-                  <div style={{ fontFamily:mono, fontSize:10, color:T.accent }}>{Math.round(s.strength*100)}%</div>
+              <div key={i} style={{ background:T.bg2, border:`1px solid ${T.border}`, padding:9, marginBottom:6 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:4 }}>
+                  <div style={{ fontFamily:mono, fontSize:sx.sigType, color:T.accent2, letterSpacing:'0.08em', textTransform:'uppercase' }}>{GST_SIGNAL_LABEL[s.type]||s.type}</div>
+                  <div style={{ fontFamily:mono, fontSize:sx.sigStr, color:T.accent }}>{Math.round(s.strength*100)}%</div>
                 </div>
-                <div style={{ height:2, background:T.bg3, marginBottom:8 }}>
+                <div style={{ height:2, background:T.bg3, marginBottom:6 }}>
                   <div style={{ height:'100%', width:`${s.strength*100}%`, background:T.accent, opacity:0.8 }}/>
                 </div>
-                <div style={{ fontSize:11.5, color:T.text2, lineHeight:1.6 }}>{s.description}</div>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginTop:8 }}>
-                  {(s.docs||[]).slice(0,4).map(d => <span key={d} style={{ fontFamily:mono, fontSize:9, padding:'2px 5px', border:`1px solid ${T.border}`, color:T.text3 }}>{d}</span>)}
-                  {(s.docs||[]).length>4 && <span style={{ fontFamily:mono, fontSize:9, color:T.text3 }}>+{s.docs.length-4}</span>}
+                <div style={{ fontSize:sx.sigDesc, color:T.text2, lineHeight:1.55 }}>{s.description}</div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginTop:6 }}>
+                  {(s.docs||[]).slice(0,4).map(d => <span key={d} style={{ fontFamily:mono, fontSize:sx.docChip, padding:'1px 4px', border:`1px solid ${T.border}`, color:T.text3 }}>{d}</span>)}
+                  {(s.docs||[]).length>4 && <span style={{ fontFamily:mono, fontSize:sx.docChip, color:T.text3 }}>+{s.docs.length-4}</span>}
                 </div>
               </div>
             ))}
 
-            <SectionLabel T={T}>WHAT TO WATCH</SectionLabel>
-            <div style={{ fontSize:11.5, color:T.text2, lineHeight:1.7, background:T.bg2, border:`1px solid ${T.border}`, padding:12 }}>{active.watch}</div>
+            <SectionLabel T={T} fs={sx.section}>WHAT TO WATCH</SectionLabel>
+            <div style={{ fontSize:sx.watchBody, color:T.text2, lineHeight:1.7, background:T.bg2, border:`1px solid ${T.border}`, padding:9 }}>{active.watch}</div>
 
-            <div style={{ display:'flex', gap:6, marginTop:14 }}>
-              <button onClick={onViewAlert} style={{ fontFamily:mono, fontSize:10, padding:'7px 12px', border:`1px solid ${T.accent2}`, color:T.accent, background:'transparent', cursor:'pointer', letterSpacing:'0.08em', flex:1 }}>+ ALERT ME</button>
-              <button onClick={onViewPricing} style={{ fontFamily:mono, fontSize:10, padding:'7px 12px', border:`1px solid ${T.border2}`, color:T.text2, background:'transparent', cursor:'pointer', letterSpacing:'0.08em' }}>↓ REPORT</button>
-              <button onClick={() => onViewPrediction && onViewPrediction(active)} style={{ fontFamily:mono, fontSize:10, padding:'7px 12px', border:`1px solid ${T.border2}`, color:T.text2, background:'transparent', cursor:'pointer', letterSpacing:'0.08em' }}>↗</button>
+            <div style={{ display:'flex', gap:5, marginTop:12 }}>
+              <button onClick={onViewAlert} style={{ fontFamily:mono, fontSize:sx.btn, padding:'6px 10px', border:`1px solid ${T.accent2}`, color:T.accent, background:'transparent', cursor:'pointer', letterSpacing:'0.08em', flex:1 }}>+ ALERT ME</button>
+              <button onClick={onViewPricing} style={{ fontFamily:mono, fontSize:sx.btn, padding:'6px 10px', border:`1px solid ${T.border2}`, color:T.text2, background:'transparent', cursor:'pointer', letterSpacing:'0.08em' }}>↓ REPORT</button>
+              <button onClick={() => onViewPrediction && onViewPrediction(active)} style={{ fontFamily:mono, fontSize:sx.btn, padding:'6px 10px', border:`1px solid ${T.border2}`, color:T.text2, background:'transparent', cursor:'pointer', letterSpacing:'0.08em' }}>↗</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* TIER 3 — query dock: centered, floats above content with upward shadow */}
+      <div style={{ background:chromeBg, flexShrink:0, position:'relative', borderTop:chromeEdge, boxShadow:tweak.dark?`0 -8px 24px rgba(0,0,0,0.35), inset 0 -1px 0 rgba(255,255,255,0.03)`:`0 -8px 24px rgba(0,0,0,0.06), inset 0 -1px 0 rgba(0,0,0,0.04)`, zIndex:4 }}>
+        <div style={{ position:'absolute', top:-2, left:'50%', transform:'translateX(-50%)', width:80, height:2, background:T.accent }}/>
+        <div style={{ maxWidth:920, margin:'0 auto', padding:'16px 24px 14px', display:'flex', flexDirection:'column', gap:10, position:'relative' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <span style={{ fontFamily:mono, fontSize:11, color:T.accent, letterSpacing:'0.18em', textTransform:'uppercase' }}>● Ask the corpus</span>
+            <span style={{ fontFamily:mono, fontSize:10.5, color:T.text3, letterSpacing:'0.04em' }}>
+              <span style={{ color:T.accent }}>{Math.max(0,5-queryCount)}</span> / 5 free queries this month
+            </span>
+          </div>
+          <div style={{ display:'flex', alignItems:'stretch', border:`1px solid ${T.border2}`, background:T.bg, boxShadow:tweak.dark?`inset 0 1px 0 rgba(0,0,0,0.3)`:`inset 0 1px 0 rgba(0,0,0,0.04)` }}>
+            <span style={{ fontFamily:mono, fontSize:13, color:T.accent, padding:'0 14px', display:'flex', alignItems:'center', borderRight:`1px solid ${T.border}`, letterSpacing:'0.1em' }}>›</span>
+            <input
+              value={query} onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => { if (e.key==='Enter') onAsk(); }}
+              placeholder="What's the outlook for ITC on marketing expenses?"
+              style={{ flex:1, background:'transparent', border:'none', outline:'none', fontFamily:sans, fontSize:15, color:T.text, padding:'12px 14px', caretColor:T.accent }}
+            />
+            <span style={{ fontFamily:mono, fontSize:10, color:T.text3, padding:'0 12px', display:'flex', alignItems:'center', letterSpacing:'0.06em' }}>{query.length}/500</span>
+            <button onClick={onAsk} disabled={askState==='loading'} style={{ fontFamily:mono, fontSize:11, letterSpacing:'0.14em', textTransform:'uppercase', color:T.bg, background:askState==='loading'?T.border2:T.accent2, border:'none', padding:'0 24px', cursor:askState==='loading'?'wait':'pointer' }}>
+              {askState==='loading'?'Analysing…':'Analyse →'}
+            </button>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, flexWrap:'wrap' }}>
+            <span style={{ fontFamily:mono, fontSize:9.5, color:T.text3, letterSpacing:'0.12em', textTransform:'uppercase', marginRight:4 }}>Try</span>
+            {[
+              "What's the outlook for ITC on marketing expenses?",
+              "Will GST on co-working spaces change soon?",
+              "Risk of RCM expansion to digital platforms?",
+              "Is Section 16(4) likely to be liberalised?",
+              "Is e-invoicing threshold dropping to ₹1 cr?",
+            ].map(s => (
+              <button key={s} onClick={() => setQuery(s)} style={{ fontFamily:mono, fontSize:10, padding:'4px 9px', background:T.bg, border:`1px solid ${T.border}`, color:T.text2, cursor:'pointer', letterSpacing:'0.04em' }}>{s.length>38?s.slice(0,36)+'…':s}</button>
+            ))}
           </div>
         </div>
       </div>
