@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 
 export const config = { runtime: 'edge' };
 
@@ -115,23 +114,30 @@ export default async function handler(request) {
 
     const cleanQuery = sanitizeQuery(query);
 
-    const supabase = createClient(
-      cleanEnv(process.env.SUPABASE_URL),
-      cleanEnv(process.env.SUPABASE_ANON_KEY),
-      { auth: { persistSession: false } },
-    );
+    const supabaseUrl = cleanEnv(process.env.SUPABASE_URL);
+    const supabaseKey = cleanEnv(process.env.SUPABASE_ANON_KEY);
+    const supabaseHeaders = {
+      'Authorization': `Bearer ${supabaseKey}`,
+      'apikey': supabaseKey,
+      'Content-Type': 'application/json',
+    };
 
     // ── Rate limit ─────────────────────────────────────────────────────────────
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '0.0.0.0';
-    const { data: rl, error: rlErr } = await supabase.rpc('check_and_increment_usage', {
-      client_ip: ip,
-      free_limit: 5,
-    });
+    let rl = null;
+    try {
+      const rlRes = await fetch(`${supabaseUrl}/rest/v1/rpc/check_and_increment_usage`, {
+        method: 'POST',
+        headers: supabaseHeaders,
+        body: JSON.stringify({ client_ip: ip, free_limit: 5 }),
+      });
+      if (rlRes.ok) rl = await rlRes.json();
+      else console.error('[rate-limit]', rlRes.status, await rlRes.text());
+    } catch (e) {
+      console.error('[rate-limit]', e.message);
+    }
 
-    if (rlErr) {
-      console.error('[rate-limit]', rlErr.message);
-      // fail open — don't block the user if the rate-limit DB call errors
-    } else if (rl && !rl.allowed) {
+    if (rl && !rl.allowed) {
       return r({ error: 'rate_limited', message: 'You have used all 5 free queries for this month.', reset_at: rl.reset_at }, 429);
     }
 
@@ -158,15 +164,21 @@ export default async function handler(request) {
     }
 
     // ── Vector search ──────────────────────────────────────────────────────────
-    const { data: chunks, error: searchErr } = await supabase.rpc('match_chunks', {
-      query_embedding: embedding,
-      match_count: 8,
-      match_threshold: 0.3,
-    });
-
-    if (searchErr) {
-      console.error('[match_chunks]', searchErr.message);
-      return r({ error: 'search_error', message: 'Vector search unavailable.', _debug: searchErr.message }, 502);
+    let chunks;
+    try {
+      const searchRes = await fetch(`${supabaseUrl}/rest/v1/rpc/match_chunks`, {
+        method: 'POST',
+        headers: supabaseHeaders,
+        body: JSON.stringify({ query_embedding: embedding, match_count: 8, match_threshold: 0.3 }),
+      });
+      if (!searchRes.ok) {
+        const errText = await searchRes.text();
+        throw new Error(`match_chunks ${searchRes.status}: ${errText}`);
+      }
+      chunks = await searchRes.json();
+    } catch (e) {
+      console.error('[match_chunks]', e.message);
+      return r({ error: 'search_error', message: 'Vector search unavailable.', _debug: e.message }, 502);
     }
     if (!chunks?.length) {
       return r({ error: 'no_context', message: 'No relevant documents found for this query.' }, 200);
