@@ -811,8 +811,7 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
               const c = probColor(p);
               return (
                 <div key={p.id}
-                  onClick={() => setActiveId(p.id)}
-                  onDoubleClick={() => onViewPrediction && onViewPrediction(p)}
+                  onClick={() => { setActiveId(p.id); onViewPrediction && onViewPrediction(p); }}
                   style={{ display:'grid', gridTemplateColumns:'48px 1fr 50px 72px 96px 80px', alignItems:'center', padding:tweak.density==='compact'?'8px 16px':'13px 16px', borderBottom:`1px solid ${T.border}`, background:isActive?(tweak.dark?'rgba(200,184,106,0.06)':'rgba(154,138,58,0.08)'):'transparent', borderLeft:isActive?`2px solid ${T.accent}`:`2px solid transparent`, cursor:'pointer', transition:'background .12s' }}>
                   <div style={{ fontFamily:mono, fontSize:tx.id, color:T.text3, letterSpacing:'0.04em' }}>{p.id}</div>
                   <div>
@@ -881,7 +880,7 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
             <div style={{ fontSize:sx.watchBody, color:T.text2, lineHeight:1.7, background:T.bg2, border:`1px solid ${T.border}`, padding:9 }}>{active.watch}</div>
 
             <div style={{ display:'flex', gap:5, marginTop:12 }}>
-              <button onClick={onViewAlert} style={{ fontFamily:mono, fontSize:sx.btn, padding:'6px 10px', border:`1px solid ${T.accent2}`, color:T.accent, background:'transparent', cursor:'pointer', letterSpacing:'0.08em', flex:1 }}>+ ALERT ME</button>
+              <button onClick={() => onViewAlert && onViewAlert(active)} style={{ fontFamily:mono, fontSize:sx.btn, padding:'6px 10px', border:`1px solid ${T.accent2}`, color:T.accent, background:'transparent', cursor:'pointer', letterSpacing:'0.08em', flex:1 }}>+ ALERT ME</button>
               <button onClick={onViewPricing} style={{ fontFamily:mono, fontSize:sx.btn, padding:'6px 10px', border:`1px solid ${T.border2}`, color:T.text2, background:'transparent', cursor:'pointer', letterSpacing:'0.08em' }}>↓ REPORT</button>
               <button onClick={() => onViewPrediction && onViewPrediction(active)} style={{ fontFamily:mono, fontSize:sx.btn, padding:'6px 10px', border:`1px solid ${T.border2}`, color:T.text2, background:'transparent', cursor:'pointer', letterSpacing:'0.08em' }}>↗</button>
             </div>
@@ -1020,7 +1019,7 @@ function App() {
         onViewQuery={goQuery}
         onViewPrediction={goPrediction}
         onViewSource={() => setScreen('source')}
-        onViewAlert={() => goAlert(predictions[0])}
+        onViewAlert={(p) => goAlert(p)}
         onViewPricing={() => setScreen('pricing')}
         onToggleDark={toggleDark}
         onToggleDensity={() => setDensity(d => d==='comfy'?'compact':'comfy')}
