@@ -150,7 +150,8 @@ export default async function handler(request) {
       ({ embedding } = await embedRes.json());
     } catch (e) {
       console.error('[embed]', e.message);
-      return r({ error: 'embed_error', message: 'Failed to embed query.' }, 502);
+      // DEBUG: surface embed detail temporarily to diagnose 502 — revert after fix
+      return r({ error: 'embed_error', message: 'Failed to embed query.', _debug: e.message }, 502);
     }
 
     // ── Vector search ──────────────────────────────────────────────────────────
