@@ -137,9 +137,10 @@ export default async function handler(request) {
       const embedRes = await fetch(`${process.env.SUPABASE_URL}/functions/v1/embed`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          // .trim() guards against trailing newlines from copy-pasted secrets in Vercel env vars
+          'Authorization': `Bearer ${(process.env.SUPABASE_ANON_KEY ?? '').trim()}`,
           'Content-Type': 'application/json',
-          'X-Embed-Secret': process.env.EMBED_SECRET ?? '',
+          'X-Embed-Secret': (process.env.EMBED_SECRET ?? '').trim(),
         },
         body: JSON.stringify({ text: cleanQuery }),
       });
@@ -150,8 +151,7 @@ export default async function handler(request) {
       ({ embedding } = await embedRes.json());
     } catch (e) {
       console.error('[embed]', e.message);
-      // DEBUG: surface embed detail temporarily to diagnose 502 — revert after fix
-      return r({ error: 'embed_error', message: 'Failed to embed query.', _debug: e.message }, 502);
+      return r({ error: 'embed_error', message: 'Failed to embed query.' }, 502);
     }
 
     // ── Vector search ──────────────────────────────────────────────────────────
