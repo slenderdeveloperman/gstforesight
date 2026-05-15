@@ -747,11 +747,10 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
               <div style={{ fontFamily:mono, fontSize:11, letterSpacing:'0.12em', color:T.text3, textTransform:'uppercase', marginTop:2 }}>Regulatory Intelligence</div>
             </div>
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:28, padding:'0 22px', flex:1 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:20, padding:'0 22px', flex:1 }}>
             <Meta T={T} dot label={updatedLabel}/>
-            <Meta T={T} label={`${docCount.toLocaleString()} DOCS INDEXED`}/>
-            <Meta T={T} label={`${predictions.length} ACTIVE PREDICTIONS`}/>
-            <Meta T={T} label="73% BACKTEST · 50–70% TIER"/>
+            <span style={{ fontFamily:mono, fontSize:11, color:T.border2, letterSpacing:'0.04em' }}>·</span>
+            <span style={{ fontFamily:mono, fontSize:11, color:T.text3, letterSpacing:'0.12em', textTransform:'uppercase' }}>Foresight on demand</span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:9, padding:'0 22px', borderLeft:`1px solid ${T.border}` }}>
             <button onClick={onToggleDark} style={{ fontFamily:mono, fontSize:9, padding:'3px 8px', border:`1px solid ${T.border}`, color:T.text3, background:'transparent', cursor:'pointer', letterSpacing:'0.06em' }}>{tweak.dark?'LIGHT':'DARK'}</button>
@@ -762,11 +761,20 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
 
         {/* TICKER inside chrome plate — separated by single hairline */}
         <div style={{ height:36, display:'flex', alignItems:'stretch', borderTop:`1px solid ${T.border}`, overflow:'hidden', position:'relative' }}>
-          <div style={{ fontFamily:mono, fontSize:13, color:T.accent, padding:'0 18px', borderRight:`1px solid ${T.border}`, height:'100%', display:'flex', alignItems:'center', letterSpacing:'0.16em', flexShrink:0, background:chromeBg, position:'relative', zIndex:2 }}>● LIVE SIGNALS</div>
+          <div style={{ display:'flex', alignItems:'center', borderRight:`1px solid ${T.border}`, flexShrink:0, background:chromeBg, position:'relative', zIndex:2 }}>
+            <div style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', padding:'0 14px', display:'flex', gap:14, alignItems:'center' }}>
+              <span>{docCount.toLocaleString()} DOCS</span>
+              <span style={{ color:T.border2 }}>·</span>
+              <span>{predictions.length} PREDICTIONS</span>
+              <span style={{ color:T.border2 }}>·</span>
+              <span style={{ color:T.success }}>73% BACKTEST</span>
+            </div>
+            <div style={{ fontFamily:mono, fontSize:9, color:T.accent, padding:'0 14px', borderLeft:`1px solid ${T.border}`, height:'100%', display:'flex', alignItems:'center', letterSpacing:'0.14em' }}>● LIVE</div>
+          </div>
           <div style={{ position:'relative', flex:1, overflow:'hidden', height:'100%' }}>
             <div style={{ display:'flex', gap:0, animation:'gstTicker 60s linear infinite', whiteSpace:'nowrap', height:'100%', alignItems:'center' }}>
               {[...GST_TICKER, ...GST_TICKER].map((t,i) => (
-                <span key={i} style={{ fontFamily:mono, fontSize:13, padding:'0 22px', color:T.text2, display:'flex', alignItems:'center', gap:10 }}>
+                <span key={i} style={{ fontFamily:mono, fontSize:10, padding:'0 20px', color:T.text2, display:'flex', alignItems:'center', gap:10 }}>
                   <span style={{ color:T.text3 }}>{t.time}</span> {t.text} <span style={{ color:T.border2 }}>◆</span>
                 </span>
               ))}
