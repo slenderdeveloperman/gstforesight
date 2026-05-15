@@ -22,6 +22,9 @@ data/vectors/
 # Supabase CLI temp files
 supabase/.temp/
 
+# Query eval logs — IP-specific, contain full API responses; review locally, commit selectively
+tests/query_eval_*.json
+
 # Backup files
 *.bak
 
