@@ -332,7 +332,7 @@ Tasks:
 | Cloudflare Workers free tier sufficient? (100K req/day) | Before Phase 2 | Engineering |
 | Razorpay vs Stripe for payments? | Before Phase 3 | Yashu |
 | Hindi-language sources — priority vs. English-only first? | Before Phase 1 | Yashu |
-| Domain name — gstpulse.in or gstforesight.in? | Before Phase 2 launch | Yashu |
+| Domain name — gstforesight.in ✓ decided | Closed | Yashu |
 
 ---
 

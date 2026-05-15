@@ -72,7 +72,7 @@ The project is designed so you can add a new source in an afternoon without touc
 ## Running locally
 
 ```bash
-git clone https://github.com/slenderdeveloperman/gstpulse
+git clone https://github.com/slenderdeveloperman/gstforesight
 cd gst-foresight
 pip install -r requirements.txt
 
