@@ -112,8 +112,8 @@ export default async function handler(request) {
     const cleanQuery = sanitizeQuery(query);
 
     const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY,
+      (process.env.SUPABASE_URL ?? '').trim(),
+      (process.env.SUPABASE_ANON_KEY ?? '').trim(),
       { auth: { persistSession: false } },
     );
 
@@ -134,7 +134,7 @@ export default async function handler(request) {
     // ── Embed query via Supabase edge function ─────────────────────────────────
     let embedding;
     try {
-      const embedRes = await fetch(`${process.env.SUPABASE_URL}/functions/v1/embed`, {
+      const embedRes = await fetch(`${(process.env.SUPABASE_URL ?? '').trim()}/functions/v1/embed`, {
         method: 'POST',
         headers: {
           // .trim() guards against trailing newlines from copy-pasted secrets in Vercel env vars
@@ -151,7 +151,7 @@ export default async function handler(request) {
       ({ embedding } = await embedRes.json());
     } catch (e) {
       console.error('[embed]', e.message);
-      return r({ error: 'embed_error', message: 'Failed to embed query.' }, 502);
+      return r({ error: 'embed_error', message: 'Failed to embed query.', _debug: e.message }, 502);
     }
 
     // ── Vector search ──────────────────────────────────────────────────────────
