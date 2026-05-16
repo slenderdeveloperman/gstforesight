@@ -16,11 +16,34 @@ How to add a new signal type:
 """
 
 import json
+import re
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 import yaml
+
+
+def _parse_doc_date(date_str: Optional[str]) -> Optional[datetime]:
+    """Parse a stored document date string to a naive datetime for age comparisons.
+
+    Handles ISO strings with or without timezone suffixes ("+05:30", "Z").
+    Strips timezone before returning so all comparisons stay naive/UTC-equivalent.
+    Returns None if date_str is falsy or unparseable.
+    """
+    if not date_str:
+        return None
+    try:
+        # Remove trailing Z or ±HH:MM timezone offset to get naive ISO string
+        clean = re.sub(r"Z$|[+-]\d{2}:\d{2}$", "", date_str.strip())
+        return datetime.fromisoformat(clean)
+    except (ValueError, AttributeError):
+        return None
+
+
+def _utcnow() -> datetime:
+    """Return current UTC time as a naive datetime (replaces deprecated utcnow)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 CONFIG_PATH = Path(__file__).parent.parent / "config" / "sources.yaml"
@@ -58,7 +81,7 @@ class Prediction:
         self.probability: float = 0.0
         self.horizon_label: str = ""
         self.horizon_days: int = 0
-        self.generated_at: str = datetime.utcnow().isoformat() + "Z"
+        self.generated_at: str = _utcnow().isoformat() + "Z"
 
     def add_signal(self, signal: Signal):
         self.signals.append(signal)
@@ -241,20 +264,16 @@ class PredictionEngine:
         Signal: 3+ AARs on same topic in rolling 12 months.
         High AAR frequency on a topic = disputed area = CBIC will clarify.
         """
-        cutoff = datetime.utcnow() - timedelta(days=365)
+        cutoff = _utcnow() - timedelta(days=365)
         relevant = []
         for d in docs:
             if d.get("source_id") != "aar_rulings":
                 continue
             if topic_id not in d.get("topic_tags", []):
                 continue
-            date_str = d.get("date")
-            if date_str:
-                try:
-                    if datetime.fromisoformat(date_str) < cutoff:
-                        continue
-                except Exception:
-                    pass
+            doc_date = _parse_doc_date(d.get("date"))
+            if doc_date and doc_date < cutoff:
+                continue
             relevant.append(d)
 
         if len(relevant) < 3:
@@ -294,7 +313,7 @@ class PredictionEngine:
         if not actionable:
             return None
 
-        current_year = datetime.utcnow().year
+        current_year = _utcnow().year
         # Score by recency: most recent mention drives the strength
         strength = 0.30
         years = []
@@ -400,7 +419,7 @@ class PredictionEngine:
         best_strength = 0.0
         best_description = ""
         actionable_docs = []
-        today = datetime.utcnow()
+        today = _utcnow()
 
         for d in relevant:
             content = ((d.get("title") or "") + " " + (d.get("content") or "")).lower()
@@ -409,14 +428,8 @@ class PredictionEngine:
                 continue
 
             # Recency decay: ≤30 days → full weight, ≤60 → 0.75, ≤90 → 0.55, older → 0.40
-            age_days = 999
-            date_str = d.get("date")
-            if date_str:
-                try:
-                    doc_date = datetime.fromisoformat(date_str.replace("Z", "+00:00").split("+")[0])
-                    age_days = (today - doc_date).days
-                except (ValueError, TypeError):
-                    pass
+            doc_date = _parse_doc_date(d.get("date"))
+            age_days = (today - doc_date).days if doc_date else 999
 
             if age_days <= 30:
                 base = 0.65
@@ -532,7 +545,7 @@ class PredictionEngine:
         predictions.sort(key=lambda p: -p.probability)
 
         output = {
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": _utcnow().isoformat() + "Z",
             "doc_count": len(docs),
             "prediction_count": len(predictions),
             "predictions": [p.to_dict() for p in predictions],
@@ -543,7 +556,7 @@ class PredictionEngine:
         out_path.write_text(json.dumps(output, indent=2))
 
         # Also save a timestamped snapshot
-        ts = datetime.utcnow().strftime("%Y%m%d_%H%M")
+        ts = _utcnow().strftime("%Y%m%d_%H%M")
         snapshot_path = PREDICTIONS_DIR / f"snapshot_{ts}.json"
         snapshot_path.write_text(json.dumps(output, indent=2))
 

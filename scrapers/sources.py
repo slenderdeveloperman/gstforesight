@@ -75,7 +75,7 @@ class CBICCircularScraper(BaseScraper):
                     doc_id=doc_id,
                     title=f"CBIC Circular {circular_no}: {text[:120]}" if text else f"CBIC Circular {circular_no}",
                     url=full_url,
-                    date=self._parse_date_from_url(href),
+                    date=self._parse_date_from_content(full_text or "", href),
                     content=full_text or text or circular_no,
                     metadata={
                         "circular_no": circular_no,
@@ -88,7 +88,37 @@ class CBICCircularScraper(BaseScraper):
         print(f"[cbic_circulars] total: {len(docs)} circulars")
         return docs
 
-    def _parse_date_from_url(self, href: str) -> datetime | None:
+    def _parse_date_from_content(self, content: str, href: str) -> datetime | None:
+        """Extract publication date from circular content, falling back to URL year.
+
+        Priority order:
+          1. "Dated: 24th June, 2025" pattern in PDF content
+          2. Circular number month/year: "Circular No. 250/07/2025" → 2025-07-01
+          3. Year from URL (Jan 1 placeholder — least accurate)
+        """
+        if content:
+            # "Dated the 24th June, 2025" / "Dated: 24th June, 2025" etc.
+            m = re.search(
+                r"[Dd]ated[:\s,]*(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+\n?(\w+)[,\s]+(\d{4})",
+                content,
+            )
+            if m:
+                day, month, year = m.group(1), m.group(2), m.group(3)
+                for fmt in ("%d %B %Y", "%d %b %Y"):
+                    try:
+                        return datetime.strptime(f"{day} {month} {year}", fmt)
+                    except ValueError:
+                        continue
+
+            # Circular number encodes month: "Circular No. 250/07/2025-GST"
+            m2 = re.search(r"[Cc]ircular\s+No\.?\s*\d+/(\d{2})/(\d{4})", content)
+            if m2:
+                try:
+                    return datetime(int(m2.group(2)), int(m2.group(1)), 1)
+                except ValueError:
+                    pass
+
+        # Fallback: year only from URL → Jan 1 placeholder
         year_match = re.search(r"20(\d{2})", href)
         if year_match:
             try:
@@ -160,12 +190,14 @@ class GSTCouncilScraper(BaseScraper):
                     print(f"[gst_council] meeting {meeting_no}: cached, skipping", flush=True)
                     continue
 
-                # Parse date e.g. "21-Dec-2024"
+                # Parse date e.g. "21-Dec-2024" or range "05-Oct-2020 - 12-Oct-2020"
+                # Multi-day meetings use a range — extract only the start date.
+                date_single = re.split(r"\s+-\s+", date_text)[0].strip()
                 date = None
                 for fmt in ("%d-%b-%Y", "%d-%B-%Y", "%d/%m/%Y", "%d-%m-%Y"):
                     try:
                         from datetime import datetime
-                        date = datetime.strptime(date_text, fmt)
+                        date = datetime.strptime(date_single, fmt)
                         break
                     except ValueError:
                         continue
@@ -244,7 +276,7 @@ class AARRulingScraper(BaseScraper):
                     doc_id=doc_id,
                     title=title,
                     url=full_url,
-                    date=None,
+                    date=self._parse_aar_date(date_text),
                     content=full_text or title,
                     metadata={
                         "raw_date": date_text,
@@ -254,6 +286,24 @@ class AARRulingScraper(BaseScraper):
         except Exception as e:
             print(f"[aar_rulings] scrape error: {e}")
         return docs
+
+    def _parse_aar_date(self, text: str) -> datetime | None:
+        """Parse date strings from CBIC AAR listing tables."""
+        text = text.strip()
+        for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y",
+                    "%d %b %Y", "%d %B %Y", "%d %b, %Y", "%d %B, %Y"):
+            try:
+                return datetime.strptime(text, fmt)
+            except ValueError:
+                continue
+        # Year-only fallback
+        m = re.search(r"20\d{2}", text)
+        if m:
+            try:
+                return datetime(int(m.group(0)), 1, 1)
+            except ValueError:
+                pass
+        return None
 
 
 class BudgetSpeechScraper(BaseScraper):
