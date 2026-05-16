@@ -12,3 +12,7 @@ pymupdf>=1.24.0
 chromadb>=0.5.0
 docling>=2.0.0
 rapidocr-onnxruntime>=1.2.0
+
+# Phase 3 — X social signal pipeline
+twscrape>=0.12.0         # X scraping via internal GraphQL API (no paid API needed)
+feedparser>=6.0.11       # RSSHub RSS feed parsing fallback

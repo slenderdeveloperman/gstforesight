@@ -26,6 +26,21 @@ class Chunker:
         if not text:
             return []
 
+        # Short-form content (tweets ≤280 chars): emit as a single chunk.
+        # Avoids the advance≤0 edge case and makes intent explicit.
+        if len(text) <= 400:
+            return [{
+                "chunk_id": f"{doc['doc_id']}_chunk_0",
+                "doc_id": doc["doc_id"],
+                "source_id": doc.get("source_id", ""),
+                "date": doc.get("date"),
+                "topic_tags": doc.get("topic_tags", []),
+                "topic_scores": doc.get("topic_scores", {}),
+                "text": text,
+                "chunk_index": 0,
+                "char_start": 0,
+            }]
+
         chunks = []
         start = 0
         idx = 0

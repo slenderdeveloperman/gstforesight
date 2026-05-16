@@ -98,7 +98,18 @@ class Prediction:
         """Derive expected timeframe from signal types present."""
         sig_types = {s.signal_type for s in self.signals}
 
-        if "council_deferred_item" in sig_types:
+        if "social_regulatory_signal" in sig_types:
+            min_horizon = min(
+                s.horizon_days for s in self.signals
+                if s.signal_type == "social_regulatory_signal"
+            )
+            self.horizon_days = min_horizon
+            self.horizon_label = (
+                "Imminent — within 30 days"
+                if min_horizon <= 30
+                else "Next GST Council meeting"
+            )
+        elif "council_deferred_item" in sig_types:
             self.horizon_days = 90
             self.horizon_label = "Next GST Council meeting"
         elif "government_forward_signal" in sig_types:
@@ -490,6 +501,112 @@ class PredictionEngine:
             horizon_days=365,
         )
 
+    def evaluate_social_regulatory_signal(
+        self, docs: list[dict], topic_id: str
+    ) -> Optional[Signal]:
+        """
+        Signal: recent tweet from a verified government GST account touches
+        a GST topic.
+
+        Unlike PIB releases (government_forward_signal), tweets are:
+          - Faster: posted minutes after an event, not hours/days later
+          - Noisier: informal, sometimes aspirational, not always enacted
+          - Stale quickly: a 60-day-old tweet with no follow-up is a dead signal
+
+        Strength model:
+          base                     = 0.30
+          recency: ≤7d            += 0.20  |  ≤14d → +0.12  |  ≤30d → +0.05
+          engagement: RT > 500    += 0.10  (viral government signal)
+          imminent language       += 0.10  (notifi*, circular, effective, shortly)
+          multi-tweet bonus       += 0.04 per extra tweet, capped at +0.12
+          hard cap                 = 0.72  (tweets never dominate institutional signals)
+
+        Tweets older than 60 days are dropped — X is a real-time channel,
+        not an archive. A tweet that produced no follow-up policy action
+        within 60 days is unlikely to do so.
+        """
+        IMMINENT_PHRASES = [
+            "notifi", "circular", "effective from", "effective date",
+            "shortly", "will be issued", "to be issued", "gazette",
+            "gst council", "amendment",
+        ]
+
+        relevant = [
+            d for d in docs
+            if d.get("source_id") == "twitter_signal"
+            and topic_id in (d.get("topic_tags") or [])
+            and (d.get("metadata") or {}).get("account_type") == "government"
+        ]
+        if not relevant:
+            return None
+
+        today = datetime.utcnow()
+        best_strength = 0.0
+        has_imminent = False
+        actionable: list[dict] = []
+
+        for d in relevant:
+            # Hard staleness cutoff — tweets older than 60 days are ignored
+            age_days = 999
+            date_str = d.get("date")
+            if date_str:
+                try:
+                    doc_date = datetime.fromisoformat(
+                        date_str.replace("Z", "+00:00").split("+")[0]
+                    )
+                    age_days = (today - doc_date).days
+                except (ValueError, TypeError):
+                    pass
+
+            if age_days > 60:
+                continue
+
+            content = ((d.get("title") or "") + " " + (d.get("content") or "")).lower()
+
+            recency_bonus = (
+                0.20 if age_days <= 7
+                else 0.12 if age_days <= 14
+                else 0.05 if age_days <= 30
+                else 0.0
+            )
+
+            rt_count = int((d.get("metadata") or {}).get("retweet_count", 0) or 0)
+            engagement_bonus = 0.10 if rt_count > 500 else 0.0
+
+            doc_imminent = any(p in content for p in IMMINENT_PHRASES)
+            if doc_imminent:
+                has_imminent = True
+            imminent_bonus = 0.10 if doc_imminent else 0.0
+
+            tweet_strength = min(0.30 + recency_bonus + engagement_bonus + imminent_bonus, 0.72)
+            best_strength = max(best_strength, tweet_strength)
+            actionable.append(d)
+
+        if not actionable:
+            return None
+
+        # Diminishing multi-tweet boost (each extra matching tweet adds a little)
+        extra_boost = min((len(actionable) - 1) * 0.04, 0.12)
+        final_strength = min(best_strength + extra_boost, 0.72)
+
+        usernames = sorted({
+            (d.get("metadata") or {}).get("username", "unknown") for d in actionable
+        })
+        recency_label = f"{len(actionable)} tweet(s) in last 60 days"
+        imminent_note = " — imminent regulatory language detected" if has_imminent else ""
+
+        return Signal(
+            signal_type="social_regulatory_signal",
+            topic_id=topic_id,
+            strength=round(final_strength, 2),
+            description=(
+                f"Government X accounts ({', '.join(f'@{u}' for u in usernames[:3])}) "
+                f"posted on this topic — {recency_label}{imminent_note}"
+            ),
+            source_docs=[d["doc_id"] for d in actionable[-5:]],
+            horizon_days=30 if has_imminent else 90,
+        )
+
     def run(self) -> list[dict]:
         """Full prediction run. Returns list of prediction dicts."""
         docs = self.load_processed_docs()
@@ -507,6 +624,7 @@ class PredictionEngine:
             self.evaluate_government_forward_signal,
             self.evaluate_industry_ask_repeat,
             self.evaluate_judicial_split,
+            self.evaluate_social_regulatory_signal,
         ]
 
         predictions = []

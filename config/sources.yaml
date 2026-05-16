@@ -117,6 +117,21 @@ sources:
     weight: 0.20
     active: true
 
+  twitter_signal:
+    name: Official GST Regulatory X Accounts
+    url: https://x.com
+    type: social_scraper
+    signal_type: social_regulatory_signal
+    update_schedule: daily
+    weight: 0.18
+    active: true
+    accounts: [FinMinIndia, CBIC_India, PIBFinance, nsitharamanoffc, Anurag_Office]
+    notes: |
+      Primary: twscrape (X internal GraphQL API) — requires X_ACCOUNT_JSON secret.
+      Fallback: self-hosted RSSHub on Railway — requires RSSHUB_URL secret.
+      Both fail → returns [] with warning. Pipeline never blocked.
+      Tweets older than 60 days are excluded (hard staleness cutoff).
+
   # PLANNED SOURCES — not yet active
   high_court_orders:
     name: High Court GST Orders
@@ -185,3 +200,4 @@ prediction:
     industry_ask_repeat: 0.15          # same ask in 2+ consecutive memoranda
     judicial_split: 0.25              # conflicting HC rulings → clarification likely
     government_forward_signal: 0.20   # PIB Finance release with action language on topic
+    social_regulatory_signal: 0.18   # official X tweet — real-time but noisier than PIB

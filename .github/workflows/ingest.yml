@@ -56,6 +56,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+          X_ACCOUNT_JSON: ${{ secrets.X_ACCOUNT_JSON }}
+          RSSHUB_URL: ${{ secrets.RSSHUB_URL }}
         run: |
           SKIP=""
           if [ "${{ github.event.inputs.skip_embed }}" = "true" ]; then

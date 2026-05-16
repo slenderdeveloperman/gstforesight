@@ -29,6 +29,7 @@ def cmd_ingest(args):
         PIBFinanceScraper,
         ParliamentaryQuestionsScraper,
     )
+    from scrapers.twitter import XScraper
     from scrapers.base import release_docling, disable_ocr
     from processors.tagger import TopicTagger
     from processors.chunker import Chunker
@@ -48,6 +49,8 @@ def cmd_ingest(args):
         "icai_representations": ICAIRepresentationScraper,
         "pib_finance": PIBFinanceScraper,
         "parliamentary_questions": ParliamentaryQuestionsScraper,
+        # Phase 3 — real-time social signal
+        "twitter_signal": XScraper,
     }
 
     tagger = TopicTagger()
