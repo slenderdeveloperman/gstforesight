@@ -1,0 +1,55 @@
+name: GST Foresight — Alert Delivery
+
+on:
+  # Runs after the ingest workflow commits updated predictions.
+  # Trigger: push to main that touches the predictions file.
+  push:
+    branches: [main]
+    paths:
+      - 'data/predictions/latest.json'
+  # Manual trigger for testing.
+  workflow_dispatch:
+
+jobs:
+  send-alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write  # needed to commit previous.json snapshot
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 2  # need HEAD and HEAD~1 for the diff
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install httpx (slim dep — no sentence-transformers needed)
+        run: python3 -m pip install httpx
+
+      - name: Diff predictions and send alerts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_FROM_EMAIL: ${{ secrets.ALERT_FROM_EMAIL }}
+        run: python3 scripts/send_alerts.py
+
+      - name: Rotate snapshot — overwrite previous with current
+        run: |
+          cp data/predictions/latest.json data/predictions/previous.json
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/predictions/previous.json
+          if git diff --cached --quiet; then
+            echo "Snapshot unchanged — nothing to commit"
+          else
+            git commit -m "chore: rotate predictions snapshot [skip ci]"
+            git push
+          fi
