@@ -22,9 +22,18 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
         integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
         crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
+
+<!-- ── Supabase client (anon key is public — governed by RLS) ──────────── -->
+<script>
+const _sb = supabase.createClient(
+  'https://ayyeviobzkcqyvtvfbeu.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eWV2aW9iemtjcXl2dHZmYmV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjQyMTAsImV4cCI6MjA5MzkwMDIxMH0.cjGSP2afxKpn74jH8k1Ex1sVU1LOvRgpqyhJiBYYMaI'
+);
+</script>
 
 <!-- ── Shared tokens + mock data (gst-shared.js inlined) ───────────────── -->
 <script>
@@ -543,12 +552,31 @@ function ScreenSourceDoc({ tweak, onBack, onViewPricing }) {
 }
 
 // ── Screen: Alert Setup ───────────────────────────────────────────────────────
-function ScreenAlertSetup({ tweak, onBack, onViewPricing, prediction }) {
+function ScreenAlertSetup({ tweak, onBack, onViewPricing, prediction, session }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const mono = `'IBM Plex Mono',monospace`;
   const sans = `'IBM Plex Sans',system-ui,sans-serif`;
   const serif = `'Playfair Display',serif`;
   const p = prediction || GST_PREDICTIONS[0];
+  const [saveState, setSaveState] = React.useState('idle'); // 'idle' | 'saving' | 'ok' | 'error'
+  const [saveMsg, setSaveMsg] = React.useState('');
+
+  const handleSaveAlert = async () => {
+    if (!session) { onViewPricing && onViewPricing(); return; }
+    setSaveState('saving');
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${session.access_token}` },
+        body: JSON.stringify({ topic_id: p.topic_id, threshold_delta: 10 }),
+      });
+      const data = await res.json();
+      if (data.ok) { setSaveState('ok'); setSaveMsg('Alert saved — you will be emailed when this signal moves.'); }
+      else { setSaveState('error'); setSaveMsg(data.message || 'Failed to save alert.'); }
+    } catch(e) {
+      setSaveState('error'); setSaveMsg('Network error — please try again.');
+    }
+  };
 
   const Box = ({ label, value, hint, active }) => (
     <label style={{ display:'block', padding:'14px 16px', border:`1px solid ${active?T.accent2:T.border}`, background:active?(tweak.dark?'rgba(200,184,106,0.06)':'rgba(154,138,58,0.08)'):T.bg2, cursor:'pointer', marginBottom:8 }}>
@@ -594,10 +622,15 @@ function ScreenAlertSetup({ tweak, onBack, onViewPricing, prediction }) {
             </div>
           </div>
           <div style={{ display:'flex', gap:8, marginTop:28, paddingTop:20, borderTop:`1px solid ${T.border}` }}>
-            <button style={{ fontFamily:mono, fontSize:11, padding:'10px 20px', border:`1px solid ${T.accent2}`, color:T.bg, background:T.accent2, cursor:'pointer', letterSpacing:'0.12em', textTransform:'uppercase' }}>Save alert</button>
+            <button
+              onClick={handleSaveAlert}
+              disabled={saveState==='saving'||saveState==='ok'}
+              style={{ fontFamily:mono, fontSize:11, padding:'10px 20px', border:`1px solid ${T.accent2}`, color:T.bg, background:saveState==='ok'?T.success:T.accent2, cursor:saveState==='saving'?'wait':'pointer', letterSpacing:'0.12em', textTransform:'uppercase' }}
+            >{saveState==='saving'?'SAVING…':saveState==='ok'?'SAVED ✓':'SAVE ALERT'}</button>
             <button onClick={onBack} style={{ fontFamily:mono, fontSize:11, padding:'10px 18px', border:`1px solid ${T.border2}`, color:T.text2, background:'transparent', cursor:'pointer', letterSpacing:'0.12em', textTransform:'uppercase' }}>Cancel</button>
             <span style={{ flex:1 }}/>
-            <span style={{ fontFamily:mono, fontSize:9.5, color:T.text3, alignSelf:'center', letterSpacing:'0.06em' }}>2 of 3 free alerts in use</span>
+            {saveMsg && <span style={{ fontFamily:mono, fontSize:9.5, color:saveState==='error'?T.danger:T.success, alignSelf:'center', letterSpacing:'0.04em', maxWidth:280 }}>{saveMsg}</span>}
+            {!saveMsg && !session && <span style={{ fontFamily:mono, fontSize:9.5, color:T.warn, alignSelf:'center', letterSpacing:'0.06em' }}>Sign in to save alerts</span>}
           </div>
         </div>
         <div style={{ background:T.bg2, padding:'28px 22px', overflowY:'auto' }}>
@@ -612,6 +645,177 @@ function ScreenAlertSetup({ tweak, onBack, onViewPricing, prediction }) {
             <div style={{ fontSize:12, color:T.text2, lineHeight:1.7 }}>Your alert <strong style={{ color:T.text }}>{p.id} · {p.topic_label}</strong> just crossed the 80% threshold.</div>
           </div>
         </div>
+      </div>
+    </ScreenChrome>
+  );
+}
+
+// ── Screen: Auth ─────────────────────────────────────────────────────────────
+// Handles sign-in (Google OAuth + email/password) and sign-out.
+// onSessionChange(session) is called after a successful sign-in or sign-out.
+function ScreenAuth({ tweak, onBack, onViewPricing, session, onSessionChange }) {
+  const T = GST_THEME[tweak.dark?'dark':'light'];
+  const mono = `'IBM Plex Mono',monospace`;
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [mode, setMode] = React.useState('signin'); // 'signin' | 'signup' | 'reset'
+  const [status, setStatus] = React.useState(null);  // { type: 'error'|'ok', msg }
+  const [loading, setLoading] = React.useState(false);
+
+  const inputStyle = {
+    width:'100%', fontFamily:mono, fontSize:13, padding:'10px 14px',
+    background:T.bg3, border:`1px solid ${T.border}`, color:T.text,
+    outline:'none', marginBottom:10,
+  };
+  const btnStyle = (accent) => ({
+    width:'100%', fontFamily:mono, fontSize:11, letterSpacing:'0.1em',
+    padding:'12px 0', border:`1px solid ${accent?T.accent:T.border}`,
+    background: accent ? T.accent : 'transparent',
+    color: accent ? T.bg : T.text2,
+    cursor:'pointer', marginBottom:8,
+  });
+
+  const handleGoogle = async () => {
+    setLoading(true); setStatus(null);
+    const { error } = await _sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.origin } });
+    if (error) { setStatus({ type:'error', msg: error.message }); setLoading(false); }
+    // On success the browser redirects; no further action needed here.
+  };
+
+  const handleEmail = async () => {
+    if (!email || !password) { setStatus({ type:'error', msg:'Enter email and password.' }); return; }
+    setLoading(true); setStatus(null);
+    let result;
+    if (mode === 'signup') {
+      result = await _sb.auth.signUp({ email, password });
+      if (!result.error) setStatus({ type:'ok', msg:'Check your email to confirm your account.' });
+    } else {
+      result = await _sb.auth.signInWithPassword({ email, password });
+      if (!result.error) { onSessionChange(result.data.session); onBack(); }
+    }
+    if (result.error) setStatus({ type:'error', msg: result.error.message });
+    setLoading(false);
+  };
+
+  const handleReset = async () => {
+    if (!email) { setStatus({ type:'error', msg:'Enter your email address first.' }); return; }
+    setLoading(true); setStatus(null);
+    const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}?reset=1` });
+    setStatus(error ? { type:'error', msg: error.message } : { type:'ok', msg:'Password reset link sent — check your email.' });
+    setLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    setLoading(true);
+    await _sb.auth.signOut();
+    onSessionChange(null);
+    onBack();
+  };
+
+  return (
+    <ScreenChrome T={T} tweak={tweak} breadcrumb={['ACCOUNT']} sub={session ? `Signed in as ${session.user.email}` : 'Sign in or create an account'} onBack={onBack} onViewPricing={onViewPricing}>
+      <div style={{ maxWidth:400, margin:'0 auto', padding:'40px 24px' }}>
+
+        {session ? (
+          <div>
+            <div style={{ fontFamily:mono, fontSize:12, color:T.text2, marginBottom:24, lineHeight:1.7 }}>
+              <div style={{ color:T.text, fontWeight:500, marginBottom:4 }}>{session.user.email}</div>
+              <div>Signed in via {session.user.app_metadata?.provider ?? 'email'}</div>
+            </div>
+            <button style={btnStyle(false)} onClick={handleSignOut} disabled={loading}>
+              {loading ? 'SIGNING OUT…' : 'SIGN OUT'}
+            </button>
+          </div>
+        ) : (
+          <div>
+            <button style={{ ...btnStyle(false), display:'flex', alignItems:'center', justifyContent:'center', gap:10 }} onClick={handleGoogle} disabled={loading}>
+              <span style={{ fontSize:14 }}>G</span>
+              <span>CONTINUE WITH GOOGLE</span>
+            </button>
+
+            <div style={{ display:'flex', alignItems:'center', gap:10, margin:'16px 0', color:T.text3, fontFamily:mono, fontSize:10, letterSpacing:'0.1em' }}>
+              <div style={{ flex:1, height:1, background:T.border }}/>OR<div style={{ flex:1, height:1, background:T.border }}/>
+            </div>
+
+            <input style={inputStyle} type="email" placeholder="email address" value={email} onChange={e => setEmail(e.target.value)} />
+            <input style={inputStyle} type="password" placeholder="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key==='Enter' && handleEmail()} />
+
+            {mode === 'reset' ? (
+              <button style={btnStyle(true)} onClick={handleReset} disabled={loading}>{loading ? 'SENDING…' : 'SEND RESET LINK'}</button>
+            ) : (
+              <button style={btnStyle(true)} onClick={handleEmail} disabled={loading}>
+                {loading ? 'PLEASE WAIT…' : mode === 'signup' ? 'CREATE ACCOUNT' : 'SIGN IN'}
+              </button>
+            )}
+
+            {status && (
+              <div style={{ fontFamily:mono, fontSize:11, color: status.type==='error' ? T.danger : T.success, marginTop:8, lineHeight:1.6 }}>
+                {status.msg}
+              </div>
+            )}
+
+            <div style={{ display:'flex', gap:12, marginTop:16, fontFamily:mono, fontSize:10, letterSpacing:'0.08em' }}>
+              {mode !== 'signin'  && <button style={{ background:'none',border:'none',color:T.text3,cursor:'pointer',padding:0,fontFamily:mono,fontSize:10,letterSpacing:'0.08em' }} onClick={() => { setMode('signin');  setStatus(null); }}>SIGN IN</button>}
+              {mode !== 'signup'  && <button style={{ background:'none',border:'none',color:T.text3,cursor:'pointer',padding:0,fontFamily:mono,fontSize:10,letterSpacing:'0.08em' }} onClick={() => { setMode('signup'); setStatus(null); }}>CREATE ACCOUNT</button>}
+              {mode !== 'reset'   && <button style={{ background:'none',border:'none',color:T.text3,cursor:'pointer',padding:0,fontFamily:mono,fontSize:10,letterSpacing:'0.08em' }} onClick={() => { setMode('reset');  setStatus(null); }}>FORGOT PASSWORD</button>}
+            </div>
+          </div>
+        )}
+      </div>
+    </ScreenChrome>
+  );
+}
+
+// ── Screen: History ───────────────────────────────────────────────────────────
+// Shows the last 50 queries for a logged-in user, fetched from get_history RPC.
+function ScreenHistory({ tweak, onBack, onViewPricing, session, onViewQuery }) {
+  const T = GST_THEME[tweak.dark?'dark':'light'];
+  const mono = `'IBM Plex Mono',monospace`;
+  const [rows, setRows] = React.useState(null);
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!session) return;
+    _sb.rpc('get_history', { p_user_id: session.user.id })
+      .then(({ data, error: err }) => {
+        if (err) setError(err.message);
+        else setRows(data ?? []);
+      });
+  }, [session?.user?.id]);
+
+  const rowStyle = {
+    padding:'14px 0', borderBottom:`1px solid ${T.border}`,
+    cursor:'pointer',
+  };
+
+  return (
+    <ScreenChrome T={T} tweak={tweak} breadcrumb={['HISTORY']} sub="Last 50 queries · click to view answer" onBack={onBack} onViewPricing={onViewPricing}>
+      <div style={{ padding:'0 24px', maxWidth:800, margin:'0 auto' }}>
+        {!session && (
+          <div style={{ fontFamily:mono, fontSize:12, color:T.text3, paddingTop:32 }}>Sign in to view your query history.</div>
+        )}
+        {session && rows === null && !error && (
+          <div style={{ fontFamily:mono, fontSize:11, color:T.text3, paddingTop:32 }}>Loading…</div>
+        )}
+        {error && (
+          <div style={{ fontFamily:mono, fontSize:11, color:T.danger, paddingTop:32 }}>{error}</div>
+        )}
+        {rows && rows.length === 0 && (
+          <div style={{ fontFamily:mono, fontSize:12, color:T.text3, paddingTop:32 }}>No queries yet. Ask something on the main screen.</div>
+        )}
+        {rows && rows.map((row, i) => (
+          <div key={row.id} style={rowStyle} onClick={() => onViewQuery && onViewQuery({ query: row.query, response: { answer: row.answer, sources: row.sources ?? [] } })}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:4 }}>
+              <div style={{ fontFamily:mono, fontSize:12, color:T.text, flex:1, marginRight:16, overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{row.query}</div>
+              <div style={{ fontFamily:mono, fontSize:10, color:T.text3, flexShrink:0 }}>{new Date(row.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}</div>
+            </div>
+            {row.answer && (
+              <div style={{ fontFamily:mono, fontSize:11, color:T.text2, lineHeight:1.5, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
+                {row.answer.replace(/<think>[\s\S]*?<\/think>/g, '').trim().slice(0, 200)}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </ScreenChrome>
   );
@@ -693,7 +897,7 @@ function ScreenPricing({ tweak, onBack }) {
 }
 
 // ── DirectionA — Home screen ──────────────────────────────────────────────────
-function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPrediction, onViewSource, onViewAlert, onViewPricing, onToggleDark, onToggleDensity }) {
+function DirectionA({ tweak, predictions, liveData, session, onViewQuery, onViewPrediction, onViewSource, onViewAlert, onViewPricing, onViewAuth, onViewHistory, onToggleDark, onToggleDensity }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const D = GST_DENSITY[tweak.density];
   const [activeId, setActiveId] = React.useState(predictions[0].id);
@@ -715,12 +919,14 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
 
   const onAsk = async () => {
     if (query.trim().length < 4) return;
-    if (queryCount >= 5) { onViewPricing && onViewPricing(); return; }
+    // Pro users have no rate limit — only gate anon/free users at 5 queries
+    if (!session && queryCount >= 5) { onViewPricing && onViewPricing(); return; }
     setAskState('loading');
-    incQueryUsage();
-    setQueryCount(c => c + 1);
+    if (!session) { incQueryUsage(); setQueryCount(c => c + 1); }
     try {
-      const res = await fetch('/api/query', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ query:query.trim() }) });
+      const headers = { 'Content-Type':'application/json' };
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+      const res = await fetch('/api/query', { method:'POST', headers, body:JSON.stringify({ query:query.trim() }) });
       const data = await res.json();
       const responseObj = data.error
         ? { loading:false, errorMsg: data.message || 'An error occurred.' }
@@ -773,8 +979,10 @@ function DirectionA({ tweak, predictions, liveData, onViewQuery, onViewPredictio
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:9, padding:'0 22px', borderLeft:`1px solid ${T.border}` }}>
             <button onClick={onToggleDark} style={{ fontFamily:mono, fontSize:9, padding:'3px 8px', border:`1px solid ${T.border}`, color:T.text3, background:'transparent', cursor:'pointer', letterSpacing:'0.06em' }}>{tweak.dark?'LIGHT':'DARK'}</button>
+            {session && <Pill T={T} label="HISTORY" muted onClick={onViewHistory}/>}
             <Pill T={T} label="API" muted/>
             <Pill T={T} label="Pro" accent onClick={onViewPricing}/>
+            <Pill T={T} label={session ? (session.user.email.split('@')[0].slice(0,8).toUpperCase()) : 'SIGN IN'} muted onClick={onViewAuth}/>
           </div>
         </header>
 
@@ -980,7 +1188,15 @@ function App() {
   const [queryContext, setQueryContext] = React.useState(null);
   const [livePredictions, setLivePredictions] = React.useState(null);
   const [liveData, setLiveData] = React.useState(null);
+  const [session, setSession] = React.useState(null);
   const manualOverride = React.useRef(false);
+
+  // ── Supabase auth: restore session on mount + listen for changes ────────────
+  React.useEffect(() => {
+    _sb.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    const { data: { subscription } } = _sb.auth.onAuthStateChange((_event, s) => setSession(s));
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Auto dark/light: init with geolocation, re-check every 60s near sunrise/sunset.
   React.useEffect(() => {
@@ -1026,8 +1242,10 @@ function App() {
   if (screen === 'query') return shell(<ScreenQueryResponse tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} response={queryContext?.response} query={queryContext?.query}/>);
   if (screen === 'prediction') return shell(<ScreenPredictionDetail tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewAlert={() => goAlert(activePrediction)} prediction={activePrediction}/>);
   if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')}/>);
-  if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} prediction={activePrediction}/>);
+  if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} prediction={activePrediction} session={session}/>);
   if (screen === 'pricing') return shell(<ScreenPricing tweak={tweak} onBack={goBack}/>);
+  if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} onSessionChange={setSession}/>);
+  if (screen === 'history') return shell(<ScreenHistory tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} onViewQuery={goQuery}/>);
 
   return (
     <div style={{ width:'100vw', height:'100vh', background:T.bg }}>
@@ -1035,11 +1253,14 @@ function App() {
         tweak={tweak}
         predictions={predictions}
         liveData={liveData}
+        session={session}
         onViewQuery={goQuery}
         onViewPrediction={goPrediction}
         onViewSource={() => setScreen('source')}
         onViewAlert={(p) => goAlert(p)}
         onViewPricing={() => setScreen('pricing')}
+        onViewAuth={() => setScreen('auth')}
+        onViewHistory={() => setScreen('history')}
         onToggleDark={toggleDark}
         onToggleDensity={() => setDensity(d => d==='comfy'?'compact':'comfy')}
       />
