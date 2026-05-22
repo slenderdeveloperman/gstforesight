@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-16T17:33:00.235533Z",
-  "doc_count": 432,
+  "generated_at": "2026-05-22T16:40:34.053429Z",
+  "doc_count": 399,
   "prediction_count": 12,
   "predictions": [
     {
@@ -26,7 +26,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.8,
-          "description": "PIB Finance Ministry release (2d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (8d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -34,17 +34,17 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 28 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 21 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
+            "icai_idtc_home_d11a4526eb37",
             "icai_budget_memo_913b9b7cea25",
             "icai_idtc_home_a181b049fa76",
             "icai_idtc_home_473d58246d54",
-            "icai_idtc_home_946877f29c97",
-            "icai_budget_memo_2cb82bca83e0"
+            "icai_idtc_home_946877f29c97"
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.062658Z"
+      "generated_at": "2026-05-22T16:40:33.791315Z"
     },
     {
       "topic_id": "rate_rationalisation",
@@ -91,13 +91,13 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 102 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 92 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_idtc_home_14e0d626b23f",
+            "icai_idtc_home_d11a4526eb37",
             "icai_idtc_home_5e3685aa6e88",
-            "icai_idtc_home_dc51cc7a6f86",
-            "icai_budget_memo_913b9b7cea25"
+            "icai_idtc_home_dc51cc7a6f86"
           ]
         },
         {
@@ -113,7 +113,7 @@
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:32:59.985167Z"
+      "generated_at": "2026-05-22T16:40:33.664687Z"
     },
     {
       "topic_id": "itc_eligibility",
@@ -159,13 +159,13 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 95 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 82 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_budget_memo_8e0fdea78049",
             "icai_idtc_home_14e0d626b23f",
-            "icai_idtc_home_5e3685aa6e88",
-            "icai_idtc_home_dc51cc7a6f86"
+            "icai_idtc_home_d11a4526eb37",
+            "icai_budget_memo_7be10ddd150a"
           ]
         },
         {
@@ -181,7 +181,7 @@
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:32:59.921753Z"
+      "generated_at": "2026-05-22T16:40:33.566539Z"
     },
     {
       "topic_id": "classification_disputes",
@@ -218,7 +218,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.8,
-          "description": "PIB Finance Ministry release (2d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (8d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -226,13 +226,13 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 58 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 54 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_idtc_home_14e0d626b23f",
+            "icai_idtc_home_d11a4526eb37",
             "icai_idtc_home_5e3685aa6e88",
-            "icai_idtc_home_dc51cc7a6f86",
-            "icai_idtc_home_fbd499e4f631"
+            "icai_idtc_home_dc51cc7a6f86"
           ]
         },
         {
@@ -248,7 +248,7 @@
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.088237Z"
+      "generated_at": "2026-05-22T16:40:33.830304Z"
     },
     {
       "topic_id": "msme_composition",
@@ -285,7 +285,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.8,
-          "description": "PIB Finance Ministry release (2d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (8d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -293,17 +293,17 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 45 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 42 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_idtc_home_14e0d626b23f",
+            "icai_idtc_home_d11a4526eb37",
             "icai_idtc_home_fbd499e4f631",
-            "icai_idtc_home_473d58246d54",
-            "icai_budget_memo_f2545bce308d"
+            "icai_idtc_home_473d58246d54"
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.160748Z"
+      "generated_at": "2026-05-22T16:40:33.939284Z"
     },
     {
       "topic_id": "place_of_supply",
@@ -339,7 +339,7 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 52 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 45 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_idtc_home_5e3685aa6e88",
@@ -349,7 +349,7 @@
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.135682Z"
+      "generated_at": "2026-05-22T16:40:33.900992Z"
     },
     {
       "topic_id": "real_estate",
@@ -386,17 +386,17 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 41 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 33 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_idtc_home_212aa6996d00",
+            "icai_idtc_home_d11a4526eb37",
             "icai_budget_memo_913b9b7cea25",
-            "icai_idtc_home_fbd499e4f631",
-            "icai_idtc_home_33b970f98f20"
+            "icai_idtc_home_fbd499e4f631"
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.195052Z"
+      "generated_at": "2026-05-22T16:40:33.991845Z"
     },
     {
       "topic_id": "rcm_coverage",
@@ -429,7 +429,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.8,
-          "description": "PIB Finance Ministry release (2d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (8d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -437,17 +437,17 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 67 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 55 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_budget_memo_8e0fdea78049",
             "icai_idtc_home_14e0d626b23f",
-            "icai_idtc_home_ed25fdb1a188",
-            "icai_idtc_home_dc51cc7a6f86"
+            "icai_idtc_home_dc51cc7a6f86",
+            "icai_budget_memo_913b9b7cea25"
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:32:59.969254Z"
+      "generated_at": "2026-05-22T16:40:33.638254Z"
     },
     {
       "topic_id": "valuation",
@@ -484,7 +484,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.8,
-          "description": "PIB Finance Ministry release (2d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (8d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -492,7 +492,7 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 39 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 36 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_idtc_home_dc51cc7a6f86",
@@ -502,7 +502,7 @@
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.114924Z"
+      "generated_at": "2026-05-22T16:40:33.871343Z"
     },
     {
       "topic_id": "return_format",
@@ -537,17 +537,17 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 77 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 66 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
             "icai_budget_memo_8e0fdea78049",
             "icai_idtc_home_14e0d626b23f",
-            "icai_budget_memo_913b9b7cea25",
-            "icai_idtc_home_fbd499e4f631"
+            "icai_idtc_home_d11a4526eb37",
+            "icai_budget_memo_7be10ddd150a"
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.036393Z"
+      "generated_at": "2026-05-22T16:40:33.751372Z"
     },
     {
       "topic_id": "e_invoicing",
@@ -580,13 +580,13 @@
         {
           "type": "industry_ask_repeat",
           "strength": 0.45,
-          "description": "Repeated ask across 48 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
+          "description": "Repeated ask across 44 industry submissions \u2014 government typically addresses persistent asks within 2\u20133 budget cycles",
           "source_docs": [
             "icai_idtc_home_6f5686b05e1c",
+            "icai_idtc_home_d11a4526eb37",
             "icai_idtc_home_dc51cc7a6f86",
             "icai_budget_memo_913b9b7cea25",
-            "icai_idtc_home_a181b049fa76",
-            "icai_idtc_home_473d58246d54"
+            "icai_idtc_home_a181b049fa76"
           ]
         },
         {
@@ -600,7 +600,7 @@
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.068720Z"
+      "generated_at": "2026-05-22T16:40:33.800522Z"
     },
     {
       "topic_id": "gst_on_crypto_vda",
@@ -630,7 +630,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.8,
-          "description": "PIB Finance Ministry release (2d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (8d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2261174"
           ]
@@ -645,7 +645,7 @@
           ]
         }
       ],
-      "generated_at": "2026-05-16T17:33:00.156696Z"
+      "generated_at": "2026-05-22T16:40:33.933183Z"
     }
   ]
 }
