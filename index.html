@@ -265,14 +265,14 @@ function ScreenChrome({ T, tweak, breadcrumb, sub, onBack, onViewPricing, childr
 }
 
 // ── Screen: Query Response ────────────────────────────────────────────────────
-function ScreenQueryResponse({ tweak, onBack, onViewPricing, response, query }) {
+function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, response, query }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const mono = `'IBM Plex Mono',monospace`;
   const sans = `'IBM Plex Sans',system-ui,sans-serif`;
   const serif = `'Playfair Display',serif`;
   const probColor = T.warn;
 
-  const chunks = [
+  const mockChunks = [
     { src:'cbic_circ_178', date:'03 AUG 2022', score:0.91, text:'…liquidated damages and penal charges shall not be treated as supply for consideration … but where such payments include service of refraining or tolerating an act, GST shall be applicable…' },
     { src:'aar_mh_33',     date:'14 NOV 2024', score:0.88, text:'…input tax credit on promotional schemes structured as buy-one-get-one cannot be regarded as gifts within the meaning of Section 17(5)(h)…' },
     { src:'aar_kar_19',    date:'28 JAN 2025', score:0.84, text:'…distribution of free samples to medical professionals does not constitute a "supply" and consequent ITC reversal under Rule 42 is not warranted…' },
@@ -283,9 +283,10 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, response, query }) 
   const displayQuery = query || `What's the outlook for ITC on marketing expenses?`;
   const liveAnswer = response && !response.loading && !response.errorMsg && response.answer;
   const liveSources = response?.sources || [];
+  const hasLive = !!(liveAnswer && liveSources.length > 0);
 
   return (
-    <ScreenChrome T={T} tweak={tweak} breadcrumb={['QUERY']} sub="Returned in 1.42s · 8 chunks retrieved · Sarvam-M generation" onBack={onBack} onViewPricing={onViewPricing}>
+    <ScreenChrome T={T} tweak={tweak} breadcrumb={['QUERY']} sub={hasLive ? `${liveSources.length} sources retrieved · Sarvam-M` : 'Returned in 1.42s · 8 chunks retrieved · Sarvam-M generation'} onBack={onBack} onViewPricing={onViewPricing}>
       <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 460px', minHeight:0 }}>
         <div style={{ borderRight:`1px solid ${T.border}`, display:'flex', flexDirection:'column', minHeight:0 }}>
           <div style={{ padding:'24px 32px 18px', borderBottom:`1px solid ${T.border}` }}>
@@ -299,7 +300,7 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, response, query }) 
                 {liveSources.length > 0 && (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:12, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
                     <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', marginRight:4 }}>SOURCES</span>
-                    {liveSources.map(s => <span key={s} style={{ fontFamily:mono, fontSize:9, color:T.text2, padding:'2px 6px', border:`1px solid ${T.border}`, background:T.bg3 }}>{s}</span>)}
+                    {liveSources.map(s => <span key={s.source_id} style={{ fontFamily:mono, fontSize:9, color:T.text2, padding:'2px 6px', border:`1px solid ${T.border}`, background:T.bg3 }}>{s.source_id}</span>)}
                   </div>
                 )}
               </>
@@ -335,11 +336,19 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, response, query }) 
         </div>
         <div style={{ display:'flex', flexDirection:'column', minHeight:0, background:T.bg2 }}>
           <div style={{ padding:'9px 16px', borderBottom:`1px solid ${T.border}`, fontFamily:mono, fontSize:10, color:T.text3, letterSpacing:'0.1em', textTransform:'uppercase', flexShrink:0, display:'flex', justifyContent:'space-between' }}>
-            <span>Retrieved Chunks · {liveAnswer && liveSources.length > 0 ? liveSources.length : 8}</span>
+            <span>Retrieved Chunks · {hasLive ? liveSources.length : 8}</span>
             <span style={{ color:T.accent2 }}>SORTED BY RELEVANCE</span>
           </div>
           <div style={{ overflowY:'auto', flex:1, padding:14 }}>
-            {chunks.map((c,i) => (
+            {hasLive ? liveSources.map((s,i) => (
+              <div key={i} onClick={() => onViewSource && onViewSource(s)} style={{ background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', marginBottom:8, cursor:'pointer' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6 }}>
+                  <span style={{ fontFamily:mono, fontSize:9.5, color:T.accent, letterSpacing:'0.06em' }}>{s.source_id}</span>
+                  <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.04em' }}>{s.date ? s.date.slice(0,10) : ''}</span>
+                </div>
+                <div style={{ fontSize:11, color:T.text2, lineHeight:1.55, fontStyle:'italic' }}>{s.excerpt || ''}</div>
+              </div>
+            )) : mockChunks.map((c,i) => (
               <div key={i} style={{ background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', marginBottom:8 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6 }}>
                   <span style={{ fontFamily:mono, fontSize:9.5, color:T.accent, letterSpacing:'0.06em' }}>{c.src}</span>
@@ -476,75 +485,88 @@ function ScreenPredictionDetail({ tweak, onBack, onViewPricing, onViewAlert, pre
 }
 
 // ── Screen: Source Document ───────────────────────────────────────────────────
-function ScreenSourceDoc({ tweak, onBack, onViewPricing }) {
+function ScreenSourceDoc({ tweak, onBack, onViewPricing, source }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const mono = `'IBM Plex Mono',monospace`;
   const sans = `'IBM Plex Sans',system-ui,sans-serif`;
 
-  const docChunks = [
-    { para:'F. No. CBIC-20001/12/2024-GST · Government of India · Ministry of Finance · Department of Revenue · Central Board of Indirect Taxes and Customs · GST Policy Wing', muted:true },
-    { para:'Circular No. 232/2026-GST · Dated 04 April 2026', bold:true },
-    { para:'Subject: Clarifications on the implementation timeline for the Invoice Management System (IMS) and treatment of GSTR-2B for taxpayers who have not actively engaged with the IMS dashboard.' },
-    { para:'Representations have been received from various trade associations, ICAI and individual taxpayers seeking clarification on the operationalisation of the Invoice Management System ("IMS") notified vide Notification No. IMS-2024 dated 14 October 2024.' },
-    { para:'In particular, doubts have been raised on the treatment of "passive taxpayers" — i.e., taxpayers who do not actively accept, reject or keep pending invoices on the IMS dashboard within the prescribed timelines.', highlight:true, sim:0.93, chunkId:'cbic_circ_232/c4' },
-    { para:'It is clarified that for the period commencing 1 April 2025 and until further notification, invoices in respect of which no action has been taken on the IMS dashboard shall be deemed to have been "accepted" for the purpose of computation of GSTR-2B, subject to the conditions in paragraph 4 below.', highlight:true, sim:0.88, chunkId:'cbic_circ_232/c5' },
-    { para:'However, the deeming fiction shall not extend to invoices flagged by the system on grounds of supplier default, mismatched HSN classification, or where the supplier has been placed in the high-risk category by the jurisdictional officer.' },
-    { para:'This clarification is in the nature of an interim guidance pending the GST Council\'s decision on the formal mandatory implementation of the IMS, which was deferred at the 53rd GST Council meeting held on 18 March 2025.' },
-    { para:'The Principal Chief Commissioners / Chief Commissioners of Central Tax may issue suitable trade notices to publicise the contents of this Circular.', muted:true },
-    { para:'(Sanjay Kumar Mangal) · Principal Commissioner (GST)', muted:true },
-  ];
+  if (!source) {
+    return (
+      <ScreenChrome T={T} tweak={tweak} breadcrumb={['SOURCES']} sub="no source selected" onBack={onBack} onViewPricing={onViewPricing}>
+        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:T.text3, fontFamily:mono, fontSize:12, letterSpacing:'0.08em' }}>
+          No source selected — run a query and click a source chunk.
+        </div>
+      </ScreenChrome>
+    );
+  }
+
+  const sid = source.source_id || 'unknown';
+  const excerpt = source.excerpt || '';
+  const rawDate = source.date;
+  const dateLabel = rawDate
+    ? new Date(rawDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', timeZone:'Asia/Calcutta' }).toUpperCase()
+    : '—';
+  const topicTags = Array.isArray(source.topic_tags)
+    ? source.topic_tags
+    : source.topic_tags ? String(source.topic_tags).split(',').map(t => t.trim()).filter(Boolean) : [];
+  const inferType = (id) => {
+    if (id.startsWith('cbic_circ')) return 'CBIC Circular';
+    if (id.startsWith('gst_council')) return 'GST Council Minutes';
+    if (id.startsWith('aar_')) return 'AAR Ruling';
+    if (id.startsWith('budget_')) return 'Budget Speech';
+    if (id.startsWith('court_') || id.startsWith('judgment_')) return 'Court Judgment';
+    if (id.startsWith('pib_')) return 'PIB Press Release';
+    if (id.startsWith('icai_')) return 'ICAI Publication';
+    return 'Document';
+  };
+  const docType = inferType(sid);
 
   return (
-    <ScreenChrome T={T} tweak={tweak} breadcrumb={['SOURCES','CBIC_CIRC_232']} sub="2 chunks matched query · 0.91 avg similarity" onBack={onBack} onViewPricing={onViewPricing}>
+    <ScreenChrome T={T} tweak={tweak} breadcrumb={['SOURCES', sid.toUpperCase()]} sub="matched excerpt · click ↗ to open original" onBack={onBack} onViewPricing={onViewPricing}>
       <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 360px', minHeight:0 }}>
         <div style={{ borderRight:`1px solid ${T.border}`, display:'flex', flexDirection:'column', minHeight:0 }}>
           <div style={{ padding:'10px 24px', borderBottom:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0, background:T.bg2 }}>
             <div style={{ display:'flex', alignItems:'center', gap:14 }}>
               <span style={{ fontFamily:mono, fontSize:10, color:T.text3, letterSpacing:'0.1em' }}>SOURCE</span>
-              <span style={{ fontFamily:mono, fontSize:10.5, color:T.accent }}>cbic_circ_232</span>
-              <span style={{ fontFamily:mono, fontSize:10, color:T.text2 }}>CBIC Circular · 04 APR 2026 · 4 pages</span>
+              <span style={{ fontFamily:mono, fontSize:10.5, color:T.accent }}>{sid}</span>
+              {rawDate && <span style={{ fontFamily:mono, fontSize:10, color:T.text2 }}>{docType} · {dateLabel}</span>}
             </div>
-            <button style={{ fontFamily:mono, fontSize:9.5, padding:'4px 9px', border:`1px solid ${T.border2}`, background:'transparent', color:T.text2, cursor:'pointer', letterSpacing:'0.06em' }}>↗ original PDF</button>
+            <button style={{ fontFamily:mono, fontSize:9.5, padding:'4px 9px', border:`1px solid ${T.border2}`, background:'transparent', color:T.text2, cursor:'pointer', letterSpacing:'0.06em' }}>↗ original</button>
           </div>
           <div style={{ overflowY:'auto', flex:1, padding:'28px 60px', maxWidth:760 }}>
-            {docChunks.map((c,i) => (
-              <div key={i} style={{ position:'relative', marginBottom:14, padding:c.highlight?'8px 14px':'0', background:c.highlight?(tweak.dark?'rgba(200,184,106,0.10)':'rgba(154,138,58,0.13)'):'transparent', borderLeft:c.highlight?`2px solid ${T.accent}`:'none' }}>
-                <div style={{ fontFamily:c.muted?mono:`'IBM Plex Sans',system-ui,sans-serif`, fontSize:c.muted?10:c.bold?14:13, color:c.muted?T.text3:T.text, lineHeight:c.muted?1.5:1.75, fontWeight:c.bold?600:c.muted?400:300, textAlign:c.muted?'center':'left' }}>{c.para}</div>
-                {c.highlight && (
-                  <div style={{ position:'absolute', right:-42, top:8, fontFamily:mono, fontSize:9, color:T.accent, letterSpacing:'0.08em' }}>
-                    <div>sim {c.sim.toFixed(2)}</div>
-                    <div style={{ color:T.text3 }}>{c.chunkId.split('/')[1]}</div>
-                  </div>
-                )}
+            {excerpt ? (
+              <div style={{ position:'relative', marginBottom:14, padding:'8px 14px', background:tweak.dark?'rgba(200,184,106,0.10)':'rgba(154,138,58,0.13)', borderLeft:`2px solid ${T.accent}` }}>
+                <div style={{ fontFamily:sans, fontSize:13, color:T.text, lineHeight:1.75, fontWeight:300 }}>{excerpt}</div>
+                <div style={{ position:'absolute', right:-42, top:8, fontFamily:mono, fontSize:9, color:T.accent, letterSpacing:'0.08em' }}>MATCH</div>
               </div>
-            ))}
+            ) : (
+              <div style={{ fontFamily:mono, fontSize:11, color:T.text3 }}>No excerpt available.</div>
+            )}
+            <div style={{ marginTop:24, fontFamily:mono, fontSize:10, color:T.text3, lineHeight:1.7, borderTop:`1px solid ${T.border}`, paddingTop:16 }}>
+              Showing the matched excerpt retrieved by vector search. Open ↗ original for full document context.
+            </div>
           </div>
         </div>
         <div style={{ display:'flex', flexDirection:'column', minHeight:0, background:T.bg2, overflowY:'auto' }}>
           <div style={{ padding:'14px 18px', borderBottom:`1px solid ${T.border}` }}>
             <div style={{ fontFamily:mono, fontSize:10, color:T.text3, letterSpacing:'0.12em', marginBottom:10 }}>METADATA</div>
-            {[['DOC ID','cbic_circ_232'],['ISSUER','CBIC GST Policy Wing'],['DATE','04 APR 2026'],['TYPE','Circular'],['CHUNKS','11'],['INGESTED','08 APR 2026 06:00 IST']].map(([k,v]) => (
+            {[['DOC ID', sid], ['TYPE', docType], ['DATE', dateLabel]].map(([k,v]) => (
               <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'5px 0', borderBottom:`1px solid ${T.border}` }}>
                 <span style={{ fontFamily:mono, fontSize:9.5, color:T.text3, letterSpacing:'0.06em' }}>{k}</span>
                 <span style={{ fontFamily:mono, fontSize:9.5, color:T.text2 }}>{v}</span>
               </div>
             ))}
           </div>
-          <div style={{ padding:'14px 18px', borderBottom:`1px solid ${T.border}` }}>
-            <div style={{ fontFamily:mono, fontSize:10, color:T.text3, letterSpacing:'0.12em', marginBottom:10 }}>TOPIC TAGS · AUTO</div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-              <span style={{ fontFamily:mono, fontSize:9.5, padding:'3px 8px', background:'rgba(200,184,106,0.12)', color:T.accent, border:`1px solid ${T.accent2}` }}>ims_itc_flow · 0.92</span>
-              <span style={{ fontFamily:mono, fontSize:9.5, padding:'3px 8px', background:T.bg, color:T.text2, border:`1px solid ${T.border2}` }}>itc_eligibility · 0.41</span>
+          {topicTags.length > 0 && (
+            <div style={{ padding:'14px 18px' }}>
+              <div style={{ fontFamily:mono, fontSize:10, color:T.text3, letterSpacing:'0.12em', marginBottom:10 }}>TOPIC TAGS · AUTO</div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
+                {topicTags.map(t => (
+                  <span key={t} style={{ fontFamily:mono, fontSize:9.5, padding:'3px 8px', background:T.bg, color:T.text2, border:`1px solid ${T.border2}` }}>{t}</span>
+                ))}
+              </div>
             </div>
-          </div>
-          <div style={{ padding:'14px 18px' }}>
-            <div style={{ fontFamily:mono, fontSize:10, color:T.text3, letterSpacing:'0.12em', marginBottom:10 }}>FEEDS PREDICTIONS</div>
-            <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0' }}>
-              <span style={{ fontFamily:mono, fontSize:9, color:T.text3 }}>P-2614</span>
-              <span style={{ flex:1, fontSize:11.5, color:T.text2 }}>IMS / ITC Flow Mechanism</span>
-              <span style={{ fontFamily:mono, fontSize:11.5, color:T.danger, fontWeight:600 }}>78%</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </ScreenChrome>
@@ -930,7 +952,7 @@ function DirectionA({ tweak, predictions, liveData, session, onViewQuery, onView
       const data = await res.json();
       const responseObj = data.error
         ? { loading:false, errorMsg: data.message || 'An error occurred.' }
-        : { loading:false, answer:data.answer, sources:(data.sources||[]).map(s=>s.source_id||String(s)) };
+        : { loading:false, answer:data.answer, sources: data.sources || [] };
       onViewQuery && onViewQuery({ query:query.trim(), response:responseObj });
     } catch(e) {
       onViewQuery && onViewQuery({ query:query.trim(), response:{ loading:false, errorMsg:'Network error — please try again.' } });
@@ -1186,6 +1208,7 @@ function App() {
   const [screen, setScreen] = React.useState(null);
   const [activePrediction, setActivePrediction] = React.useState(null);
   const [queryContext, setQueryContext] = React.useState(null);
+  const [sourceContext, setSourceContext] = React.useState(null);
   const [livePredictions, setLivePredictions] = React.useState(null);
   const [liveData, setLiveData] = React.useState(null);
   const [session, setSession] = React.useState(null);
@@ -1235,13 +1258,14 @@ function App() {
   const goAlert = (p) => { setActivePrediction(p); setScreen('alert'); };
   const goPrediction = (p) => { setActivePrediction(p); setScreen('prediction'); };
   const goQuery = (ctx) => { setQueryContext(ctx); setScreen('query'); };
+  const goSource = (s) => { setSourceContext(s); setScreen('source'); };
   const toggleDark = () => { manualOverride.current = true; setDark(d => !d); };
 
   const shell = (child) => <div style={{ width:'100vw', height:'100vh', background:T.bg }}>{child}</div>;
 
-  if (screen === 'query') return shell(<ScreenQueryResponse tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} response={queryContext?.response} query={queryContext?.query}/>);
+  if (screen === 'query') return shell(<ScreenQueryResponse tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewSource={goSource} response={queryContext?.response} query={queryContext?.query}/>);
   if (screen === 'prediction') return shell(<ScreenPredictionDetail tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewAlert={(p) => goAlert(p)} prediction={activePrediction}/>);
-  if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')}/>);
+  if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} source={sourceContext}/>);
   if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} prediction={activePrediction} session={session}/>);
   if (screen === 'pricing') return shell(<ScreenPricing tweak={tweak} onBack={goBack}/>);
   if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} onSessionChange={setSession}/>);
