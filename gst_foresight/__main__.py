@@ -207,10 +207,14 @@ def cmd_reextract(args):
                 skipped += 1
                 continue
 
+            # Council minutes PDFs run 20-30 MB; raise the cap for that source only.
+            large_pdf_sources = {"gst_council_minutes"}
+            max_bytes = 50 * 1024 * 1024 if source_dir.name in large_pdf_sources else None
+
             print(f"[reextract] {raw_path.name} — fetching {url[:70]}...")
             try:
                 if url.lower().endswith(".pdf"):
-                    text = fetcher.fetch_pdf_text(url)
+                    text = fetcher.fetch_pdf_text(url, **({} if max_bytes is None else {"max_bytes": max_bytes}))
                 else:
                     # HTML page — extract visible text
                     soup = fetcher.fetch_html(url)

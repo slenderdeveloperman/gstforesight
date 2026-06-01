@@ -241,12 +241,35 @@ class AARRulingScraper(BaseScraper):
     Topic frequency is the signal, not individual rulings.
     """
     source_id = "aar_rulings"
-    BASE_URL = "https://cbic-gst.gov.in/advance-ruling.html"
+    # CBIC retired advance-ruling.html. Candidates to try in order.
+    CANDIDATE_URLS = [
+        "https://cbic-gst.gov.in/advance-rulings-list.html",
+        "https://cbic-gst.gov.in/advance-ruling-orders.html",
+        "https://cbic-gst.gov.in/advance-ruling.html",
+    ]
 
     def scrape(self) -> list[Document]:
         docs = []
+        soup = None
+        working_url = None
+        for candidate in self.CANDIDATE_URLS:
+            try:
+                soup = self.fetch_html(candidate)
+                if soup.select("table tr, .ruling-item"):
+                    working_url = candidate
+                    break
+            except Exception as e:
+                print(f"[aar_rulings] {candidate} — {e}", flush=True)
+
+        if soup is None or working_url is None:
+            print(
+                "[aar_rulings] WARNING: all candidate URLs failed or returned no rows. "
+                "CBIC may have moved the advance rulings listing — update CANDIDATE_URLS.",
+                flush=True,
+            )
+            return []
+
         try:
-            soup = self.fetch_html(self.BASE_URL)
             for row in soup.select("table tr, .ruling-item"):
                 cells = row.find_all("td")
                 if len(cells) < 2:
@@ -255,7 +278,7 @@ class AARRulingScraper(BaseScraper):
                 title = cells[0].get_text(strip=True)
                 date_text = cells[1].get_text(strip=True) if len(cells) > 1 else ""
                 link = row.find("a", href=True)
-                url = link["href"] if link else self.BASE_URL
+                url = link["href"] if link else working_url
 
                 if not title:
                     continue
@@ -284,7 +307,14 @@ class AARRulingScraper(BaseScraper):
                     },
                 ))
         except Exception as e:
-            print(f"[aar_rulings] scrape error: {e}")
+            print(f"[aar_rulings] parse error: {e}", flush=True)
+
+        if not docs:
+            print(
+                f"[aar_rulings] WARNING: fetched {working_url} but parsed 0 rulings — "
+                "page structure may have changed, update selectors.",
+                flush=True,
+            )
         return docs
 
     def _parse_aar_date(self, text: str) -> datetime | None:
@@ -465,7 +495,7 @@ class IndianKanoonScraper(BaseScraper):
                                 "court": court,
                                 "raw_date": date_text,
                                 "search_query": query,
-                                "full_text_extracted": bool(snippet),
+                                "full_text_extracted": False,
                             },
                         ))
 

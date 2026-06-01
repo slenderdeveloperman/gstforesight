@@ -22,7 +22,7 @@ class Chunker:
 
     def chunk(self, doc: dict) -> list[dict]:
         """Split a processed document dict into overlapping chunk dicts."""
-        text = (doc.get("content") or "").strip()
+        text = (doc.get("content") or "").replace('\x00', '').strip()
         if not text:
             return []
 

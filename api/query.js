@@ -257,7 +257,7 @@ export default async function handler(request) {
     if (!sarvamRes.ok) {
       const errText = await sarvamRes.text();
       console.error('[sarvam]', sarvamRes.status, errText);
-      return r({ error: 'llm_error', message: 'Failed to generate analysis.', _debug: `${sarvamRes.status}: ${errText.slice(0, 200)}` }, 502);
+      return r({ error: 'llm_error', message: 'Failed to generate analysis.' }, 502);
     }
 
     const sarvamData = await sarvamRes.json();

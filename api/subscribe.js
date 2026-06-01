@@ -31,9 +31,9 @@ const cleanEnv = v => (v ?? '').replace(/[^\x20-\x7E]/g, '');
 
 // Valid topic IDs from the 12-topic prediction taxonomy
 const VALID_TOPIC_IDS = new Set([
-  'itc_eligibility', 'rcm_expansion', 'rate_rationalisation', 'gstr_compliance',
-  'e_invoicing', 'classification_disputes', 'valuation_rules', 'place_of_supply',
-  'crypto_vda', 'composition_scheme', 'real_estate', 'council_outcomes',
+  'ims_itc_flow', 'rate_rationalisation', 'itc_eligibility', 'classification_disputes',
+  'msme_composition', 'place_of_supply', 'real_estate', 'rcm_coverage',
+  'valuation', 'return_format', 'e_invoicing', 'gst_on_crypto_vda',
 ]);
 
 // Returns { id, email } for authenticated requests, null otherwise.
