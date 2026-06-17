@@ -239,13 +239,13 @@ export default async function handler(request) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'sarvam-m',
+          model: 'sarvam-30b',
           messages: [
             { role: 'system', content: 'You are a GST regulatory foresight analyst for India. Provide structured, evidence-grounded assessments based strictly on the documents provided.' },
             { role: 'user', content: buildPrompt(cleanQuery, chunks) },
           ],
           temperature: 0.2,
-          max_tokens: 800,
+          max_tokens: 4000,
           stream: false,
         }),
       });
