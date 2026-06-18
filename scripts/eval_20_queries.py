@@ -148,13 +148,13 @@ def call_sarvam(query: str, chunks: list[dict], cfg: dict) -> tuple[str | None, 
     prompt = SARVAM_PROMPT_TEMPLATE.format(context=context, query=query)
 
     payload = json.dumps({
-        "model": "sarvam-m",
+        "model": "sarvam-30b",
         "messages": [
             {"role": "system", "content": "You are a GST regulatory foresight analyst for India. Provide structured, evidence-grounded assessments."},
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.2,
-        "max_tokens": 800,
+        "max_tokens": 4000,
         "stream": False,
     }).encode()
 
@@ -168,7 +168,7 @@ def call_sarvam(query: str, chunks: list[dict], cfg: dict) -> tuple[str | None, 
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=90) as resp:
             data = json.loads(resp.read())
             raw = data["choices"][0]["message"]["content"]
             return strip_think_tags(raw), None

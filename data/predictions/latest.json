@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-17T12:35:56.886562Z",
+  "generated_at": "2026-06-18T07:54:59.834526Z",
   "doc_count": 408,
   "prediction_count": 12,
   "predictions": [
@@ -70,7 +70,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.510931Z"
+      "generated_at": "2026-06-18T07:54:59.412574Z"
     },
     {
       "topic_id": "itc_eligibility",
@@ -138,7 +138,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.385443Z"
+      "generated_at": "2026-06-18T07:54:59.311017Z"
     },
     {
       "topic_id": "ims_itc_flow",
@@ -151,19 +151,19 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 7 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 16 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
+            "gst_council_39",
             "gst_council_42",
+            "gst_council_54",
             "gst_council_55",
-            "gst_council_25",
-            "gst_council_45",
-            "gst_council_50"
+            "gst_council_25"
           ]
         },
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (34d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -181,7 +181,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.636201Z"
+      "generated_at": "2026-06-18T07:54:59.520310Z"
     },
     {
       "topic_id": "classification_disputes",
@@ -194,13 +194,13 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 30 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 45 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
             "gst_council_23",
+            "gst_council_35",
             "gst_council_19",
-            "gst_council_15",
-            "gst_council_03",
-            "gst_council_54"
+            "gst_council_39",
+            "gst_council_42"
           ]
         },
         {
@@ -218,7 +218,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (34d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -248,7 +248,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.678563Z"
+      "generated_at": "2026-06-18T07:54:59.579366Z"
     },
     {
       "topic_id": "place_of_supply",
@@ -261,13 +261,13 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 24 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 37 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
             "gst_council_23",
-            "gst_council_54",
-            "gst_council_55",
-            "gst_council_22",
-            "gst_council_05"
+            "gst_council_35",
+            "gst_council_39",
+            "gst_council_42",
+            "gst_council_15"
           ]
         },
         {
@@ -294,7 +294,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.746593Z"
+      "generated_at": "2026-06-18T07:54:59.669930Z"
     },
     {
       "topic_id": "real_estate",
@@ -307,13 +307,13 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 38 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 45 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
             "gst_council_23",
             "gst_council_35",
             "gst_council_19",
-            "gst_council_15",
-            "gst_council_03"
+            "gst_council_39",
+            "gst_council_15"
           ]
         },
         {
@@ -341,7 +341,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.831279Z"
+      "generated_at": "2026-06-18T07:54:59.775918Z"
     },
     {
       "topic_id": "msme_composition",
@@ -354,7 +354,7 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 39 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 49 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
             "gst_council_23",
             "gst_council_35",
@@ -378,7 +378,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (34d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -396,7 +396,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.782983Z"
+      "generated_at": "2026-06-18T07:54:59.723659Z"
     },
     {
       "topic_id": "return_format",
@@ -409,7 +409,7 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 32 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 39 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
             "gst_council_23",
             "gst_council_35",
@@ -441,7 +441,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.595638Z"
+      "generated_at": "2026-06-18T07:54:59.479559Z"
     },
     {
       "topic_id": "e_invoicing",
@@ -454,7 +454,7 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 27 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 37 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
             "gst_council_23",
             "gst_council_35",
@@ -494,7 +494,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.646307Z"
+      "generated_at": "2026-06-18T07:54:59.539621Z"
     },
     {
       "topic_id": "rcm_coverage",
@@ -507,13 +507,13 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 23 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 40 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
+            "gst_council_23",
+            "gst_council_35",
+            "gst_council_39",
             "gst_council_42",
-            "gst_council_55",
-            "gst_council_18",
-            "gst_council_34",
-            "gst_council_22"
+            "gst_council_15"
           ]
         },
         {
@@ -527,7 +527,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (34d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -545,7 +545,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.477335Z"
+      "generated_at": "2026-06-18T07:54:59.373272Z"
     },
     {
       "topic_id": "valuation",
@@ -558,13 +558,13 @@
         {
           "type": "council_deferred_item",
           "strength": 0.92,
-          "description": "Item deferred in 25 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "description": "Item deferred in 37 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
             "gst_council_35",
+            "gst_council_15",
+            "gst_council_54",
             "gst_council_55",
-            "gst_council_14",
-            "gst_council_43",
-            "gst_council_38"
+            "gst_council_14"
           ]
         },
         {
@@ -582,7 +582,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (34d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -600,21 +600,25 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.715116Z"
+      "generated_at": "2026-06-18T07:54:59.628183Z"
     },
     {
       "topic_id": "gst_on_crypto_vda",
       "topic_label": "VDA / Crypto Treatment",
-      "probability": 51.7,
+      "probability": 58.3,
       "horizon_label": "Next GST Council meeting",
       "horizon_days": 90,
       "signal_count": 4,
       "signals": [
         {
           "type": "council_deferred_item",
-          "strength": 0.7,
-          "description": "Item deferred in 1 GST Council meeting(s) \u2014 deferred items typically resurface within 1\u20132 meetings",
+          "strength": 0.92,
+          "description": "Item deferred in 6 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
           "source_docs": [
+            "gst_council_54",
+            "gst_council_48",
+            "gst_council_28",
+            "gst_council_50",
             "gst_council_51"
           ]
         },
@@ -630,7 +634,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (34d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2261174"
           ]
@@ -645,7 +649,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-17T12:35:56.778438Z"
+      "generated_at": "2026-06-18T07:54:59.709896Z"
     }
   ]
 }
