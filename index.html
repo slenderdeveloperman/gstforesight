@@ -1001,9 +1001,8 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
             <span style={{ fontFamily:mono, fontSize:11, color:T.text3, letterSpacing:'0.12em', textTransform:'uppercase' }}>Foresight on demand</span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:9, padding:'0 22px', borderLeft:`1px solid ${T.border}` }}>
-            <button onClick={onToggleDark} style={{ fontFamily:mono, fontSize:9, padding:'3px 8px', border:`1px solid ${T.border}`, color:T.text3, background:'transparent', cursor:'pointer', letterSpacing:'0.06em' }}>{tweak.dark?'LIGHT':'DARK'}</button>
-            {session && <Pill T={T} label="HISTORY" muted onClick={onViewHistory}/>}
-            <Pill T={T} label="API" muted/>
+            <Pill T={T} label={tweak.dark?'LIGHT':'DARK'} onClick={onToggleDark}/>
+            {session && <Pill T={T} label="HISTORY" onClick={onViewHistory}/>}
             <Pill T={T} label="Pro" accent onClick={onViewPricing}/>
             <Pill T={T} label={session ? ((profile?.display_name || session.user.email.split('@')[0]).slice(0,10).toUpperCase()) : 'SIGN IN'} accent={!session} onClick={onViewAuth}/>
           </div>
