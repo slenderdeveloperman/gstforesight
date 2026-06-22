@@ -31,7 +31,8 @@
 <script>
 const _sb = supabase.createClient(
   'https://ayyeviobzkcqyvtvfbeu.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eWV2aW9iemtjcXl2dHZmYmV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjQyMTAsImV4cCI6MjA5MzkwMDIxMH0.cjGSP2afxKpn74jH8k1Ex1sVU1LOvRgpqyhJiBYYMaI'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eWV2aW9iemtjcXl2dHZmYmV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjQyMTAsImV4cCI6MjA5MzkwMDIxMH0.cjGSP2afxKpn74jH8k1Ex1sVU1LOvRgpqyhJiBYYMaI',
+  { auth: { flowType: 'implicit' } }
 );
 </script>
 
@@ -254,7 +255,6 @@ function ScreenChrome({ T, tweak, breadcrumb, sub, onBack, onViewPricing, childr
             {sub && <span style={{ marginLeft:14, color:T.text3, letterSpacing:'0.04em', textTransform:'none', fontSize:12 }}>{sub}</span>}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:9, padding:'0 22px', borderLeft:`1px solid ${T.border}` }}>
-            <Pill T={T} label="API" muted/>
             <Pill T={T} label="Pro" accent onClick={onViewPricing}/>
           </div>
         </header>
@@ -1224,23 +1224,18 @@ function App() {
 
   // ── Supabase auth: restore session on mount + listen for changes ────────────
   React.useEffect(() => {
-    // Detect OAuth callback errors in URL (e.g. ?error=access_denied)
-    const params = new URLSearchParams(window.location.search);
+    // Detect OAuth callback: clean URL after implicit-flow hash is processed
     const hashParams = new URLSearchParams(window.location.hash.slice(1));
-    const oauthError = params.get('error') || hashParams.get('error');
+    const oauthError = hashParams.get('error') || new URLSearchParams(window.location.search).get('error');
     if (oauthError) {
       setScreen('auth');
-      // Clean URL so refresh doesn't re-trigger
       window.history.replaceState({}, '', window.location.pathname);
+    } else if (hashParams.has('access_token')) {
+      // Implicit flow: SDK picks up the token from the hash; clean URL after a tick
+      setTimeout(() => window.history.replaceState({}, '', window.location.pathname), 500);
     }
 
-    _sb.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
-      // If we came back from OAuth with a valid session, go to home
-      if (data.session && (params.has('code') || hashParams.has('access_token'))) {
-        window.history.replaceState({}, '', window.location.pathname);
-      }
-    });
+    _sb.auth.getSession().then(({ data }) => setSession(data.session ?? null));
     const { data: { subscription } } = _sb.auth.onAuthStateChange((event, s) => {
       setSession(s);
       // Close auth screen automatically on successful sign-in
