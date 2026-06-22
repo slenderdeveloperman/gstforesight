@@ -93,8 +93,8 @@ function fmtDelta(d) { return d > 0 ? `▲ ${d}` : d < 0 ? `▼ ${Math.abs(d)}` 
 function computeSunTimes(lat, lng) {
   const DEG = Math.PI / 180;
   const JD = Date.now() / 86400000 + 2440587.5;
-  const n  = Math.round(JD - 2451545.0 - 0.0009 + lng / 360); // +lng: East-positive convention matches geolocation API
-  const J_noon = 2451545.0 + 0.0009 + lng / 360 + n;
+  const n  = Math.round(JD - 2451545.0 - 0.0009 - lng / 360); // -lng: geolocation is east-positive; NOAA formula needs west-positive sign
+  const J_noon = 2451545.0 + 0.0009 - lng / 360 + n;
   const M_deg  = (357.5291 + 0.98560028 * (J_noon - 2451545)) % 360;
   const M      = M_deg * DEG;
   const C      = 1.9148 * Math.sin(M) + 0.0200 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M);
@@ -675,7 +675,7 @@ function ScreenAlertSetup({ tweak, onBack, onViewPricing, prediction, session })
 // ── Screen: Auth ─────────────────────────────────────────────────────────────
 // Handles sign-in (Google OAuth + email/password) and sign-out.
 // onSessionChange(session) is called after a successful sign-in or sign-out.
-function ScreenAuth({ tweak, onBack, onViewPricing, session, onSessionChange }) {
+function ScreenAuth({ tweak, onBack, onViewPricing, session, profile, onSessionChange }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const mono = `'IBM Plex Mono',monospace`;
   const [email, setEmail] = React.useState('');
@@ -741,6 +741,7 @@ function ScreenAuth({ tweak, onBack, onViewPricing, session, onSessionChange }) 
         {session ? (
           <div>
             <div style={{ fontFamily:mono, fontSize:12, color:T.text2, marginBottom:24, lineHeight:1.7 }}>
+              {profile?.display_name && <div style={{ color:T.text, fontWeight:600, fontSize:15, marginBottom:4, letterSpacing:'0.04em' }}>{profile.display_name}</div>}
               <div style={{ color:T.text, fontWeight:500, marginBottom:4 }}>{session.user.email}</div>
               <div>Signed in via {session.user.app_metadata?.provider ?? 'email'}</div>
             </div>
@@ -919,7 +920,7 @@ function ScreenPricing({ tweak, onBack }) {
 }
 
 // ── DirectionA — Home screen ──────────────────────────────────────────────────
-function DirectionA({ tweak, predictions, liveData, session, onViewQuery, onViewPrediction, onViewSource, onViewAlert, onViewPricing, onViewAuth, onViewHistory, onToggleDark, onToggleDensity }) {
+function DirectionA({ tweak, predictions, liveData, session, profile, onViewQuery, onViewPrediction, onViewSource, onViewAlert, onViewPricing, onViewAuth, onViewHistory, onToggleDark, onToggleDensity }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const D = GST_DENSITY[tweak.density];
   const [activeId, setActiveId] = React.useState(predictions[0].id);
@@ -978,7 +979,7 @@ function DirectionA({ tweak, predictions, liveData, session, onViewQuery, onView
   const docCount = liveData?.doc_count || 2841;
   const updatedLabel = liveData
     ? `UPDATED ${new Date(liveData.generated_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',timeZone:'Asia/Calcutta'}).toUpperCase()} 2026 · ${new Date(liveData.generated_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Calcutta',hour12:false})} IST`
-    : 'UPDATED 09 MAY 2026 · 08:31 IST';
+    : 'UPDATED 18 JUN 2026 · 13:24 IST';
 
   return (
     <div style={{ width:'100%', height:'100%', background:T.bg, color:T.text, fontFamily:sans, fontSize:D.fz, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
@@ -1004,7 +1005,7 @@ function DirectionA({ tweak, predictions, liveData, session, onViewQuery, onView
             {session && <Pill T={T} label="HISTORY" muted onClick={onViewHistory}/>}
             <Pill T={T} label="API" muted/>
             <Pill T={T} label="Pro" accent onClick={onViewPricing}/>
-            <Pill T={T} label={session ? (session.user.email.split('@')[0].slice(0,8).toUpperCase()) : 'SIGN IN'} muted onClick={onViewAuth}/>
+            <Pill T={T} label={session ? ((profile?.display_name || session.user.email.split('@')[0]).slice(0,10).toUpperCase()) : 'SIGN IN'} muted onClick={onViewAuth}/>
           </div>
         </header>
 
@@ -1212,6 +1213,7 @@ function App() {
   const [livePredictions, setLivePredictions] = React.useState(null);
   const [liveData, setLiveData] = React.useState(null);
   const [session, setSession] = React.useState(null);
+  const [profile, setProfile] = React.useState(null);
   const manualOverride = React.useRef(false);
 
   // ── Supabase auth: restore session on mount + listen for changes ────────────
@@ -1220,6 +1222,13 @@ function App() {
     const { data: { subscription } } = _sb.auth.onAuthStateChange((_event, s) => setSession(s));
     return () => subscription.unsubscribe();
   }, []);
+
+  // ── Fetch profile display_name whenever session changes ─────────────────────
+  React.useEffect(() => {
+    if (!session?.user?.id) { setProfile(null); return; }
+    _sb.from('profiles').select('display_name').eq('id', session.user.id).single()
+      .then(({ data }) => setProfile(data ?? null));
+  }, [session?.user?.id]);
 
   // Auto dark/light: init with geolocation, re-check every 60s near sunrise/sunset.
   React.useEffect(() => {
@@ -1268,7 +1277,7 @@ function App() {
   if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} source={sourceContext}/>);
   if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} prediction={activePrediction} session={session}/>);
   if (screen === 'pricing') return shell(<ScreenPricing tweak={tweak} onBack={goBack}/>);
-  if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} onSessionChange={setSession}/>);
+  if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} profile={profile} onSessionChange={setSession}/>);
   if (screen === 'history') return shell(<ScreenHistory tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} onViewQuery={goQuery}/>);
 
   return (
@@ -1278,6 +1287,7 @@ function App() {
         predictions={predictions}
         liveData={liveData}
         session={session}
+        profile={profile}
         onViewQuery={goQuery}
         onViewPrediction={goPrediction}
         onViewSource={() => setScreen('source')}
