@@ -70,18 +70,20 @@ jobs:
       - name: Generate predictions
         run: python3 -m gst_foresight predict
 
-      - name: Commit updated predictions
+      - name: Refresh news ticker
+        run: python3 scripts/scrape_ticker.py
+
+      - name: Commit updated predictions + ticker
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Stage only the predictions file — never commit raw scraped data
-          git add data/predictions/latest.json
+          git add data/predictions/latest.json data/news/ticker.json
 
           if git diff --cached --quiet; then
-            echo "No prediction changes — nothing to commit"
+            echo "No changes — nothing to commit"
           else
-            git commit -m "chore: update predictions [skip ci]
+            git commit -m "chore: update predictions + ticker [skip ci]
 
 Automated ingest run: $(date -u '+%Y-%m-%d %H:%M UTC')"
             git push

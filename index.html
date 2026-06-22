@@ -920,7 +920,7 @@ function ScreenPricing({ tweak, onBack }) {
 }
 
 // ── DirectionA — Home screen ──────────────────────────────────────────────────
-function DirectionA({ tweak, predictions, liveData, session, profile, onViewQuery, onViewPrediction, onViewSource, onViewAlert, onViewPricing, onViewAuth, onViewHistory, onToggleDark, onToggleDensity }) {
+function DirectionA({ tweak, predictions, liveData, ticker, session, profile, onViewQuery, onViewPrediction, onViewSource, onViewAlert, onViewPricing, onViewAuth, onViewHistory, onToggleDark, onToggleDensity }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const D = GST_DENSITY[tweak.density];
   const [activeId, setActiveId] = React.useState(predictions[0].id);
@@ -1023,7 +1023,7 @@ function DirectionA({ tweak, predictions, liveData, session, profile, onViewQuer
           </div>
           <div style={{ position:'relative', flex:1, overflow:'hidden', height:'100%' }}>
             <div style={{ display:'flex', gap:0, animation:'gstTicker 60s linear infinite', whiteSpace:'nowrap', height:'100%', alignItems:'center' }}>
-              {[...GST_TICKER, ...GST_TICKER].map((t,i) => (
+              {[...ticker, ...ticker].map((t,i) => (
                 <span key={i} style={{ fontFamily:mono, fontSize:10, padding:'0 20px', color:T.text2, display:'flex', alignItems:'center', gap:10 }}>
                   <span style={{ color:T.text3 }}>{t.time}</span> {t.text} <span style={{ color:T.border2 }}>◆</span>
                 </span>
@@ -1212,6 +1212,7 @@ function App() {
   const [sourceContext, setSourceContext] = React.useState(null);
   const [livePredictions, setLivePredictions] = React.useState(null);
   const [liveData, setLiveData] = React.useState(null);
+  const [liveTicker, setLiveTicker] = React.useState(null);
   const [session, setSession] = React.useState(null);
   const [profile, setProfile] = React.useState(null);
   const manualOverride = React.useRef(false);
@@ -1256,6 +1257,13 @@ function App() {
       .catch(() => {});
   }, []);
 
+  React.useEffect(() => {
+    fetch('./data/news/ticker.json?_=' + Date.now())
+      .then(r => r.json())
+      .then(data => { if (data?.items?.length > 0) setLiveTicker(data.items); })
+      .catch(() => {});
+  }, []);
+
   // Sync body background so iOS scroll-bounce and mobile safe areas don't bleed dark in light mode
   React.useEffect(() => { document.body.style.background = GST_THEME[dark?'dark':'light'].bg; }, [dark]);
 
@@ -1286,6 +1294,7 @@ function App() {
         tweak={tweak}
         predictions={predictions}
         liveData={liveData}
+        ticker={liveTicker || GST_TICKER}
         session={session}
         profile={profile}
         onViewQuery={goQuery}
