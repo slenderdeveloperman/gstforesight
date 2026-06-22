@@ -32,7 +32,7 @@
 const _sb = supabase.createClient(
   'https://ayyeviobzkcqyvtvfbeu.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eWV2aW9iemtjcXl2dHZmYmV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMjQyMTAsImV4cCI6MjA5MzkwMDIxMH0.cjGSP2afxKpn74jH8k1Ex1sVU1LOvRgpqyhJiBYYMaI',
-  { auth: { flowType: 'implicit' } }
+  { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true } }
 );
 </script>
 
@@ -1224,15 +1224,18 @@ function App() {
 
   // ── Supabase auth: restore session on mount + listen for changes ────────────
   React.useEffect(() => {
-    // Detect OAuth callback: clean URL after implicit-flow hash is processed
-    const hashParams = new URLSearchParams(window.location.hash.slice(1));
-    const oauthError = hashParams.get('error') || new URLSearchParams(window.location.search).get('error');
+    // Detect OAuth callback URL params from PKCE redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthError = urlParams.get('error') || new URLSearchParams(window.location.hash.slice(1)).get('error');
     if (oauthError) {
       setScreen('auth');
       window.history.replaceState({}, '', window.location.pathname);
-    } else if (hashParams.has('access_token')) {
-      // Implicit flow: SDK picks up the token from the hash; clean URL after a tick
-      setTimeout(() => window.history.replaceState({}, '', window.location.pathname), 500);
+    }
+
+    // PKCE: ?code= is present after Google redirect; SDK exchanges it automatically.
+    // Wait for that exchange before calling getSession so the session is ready.
+    if (urlParams.has('code')) {
+      window.history.replaceState({}, '', window.location.pathname);
     }
 
     _sb.auth.getSession().then(({ data }) => setSession(data.session ?? null));
