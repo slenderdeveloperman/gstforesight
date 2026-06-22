@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-18T07:54:59.834526Z",
+  "generated_at": "2026-06-22T06:50:28.498445Z",
   "doc_count": 408,
   "prediction_count": 12,
   "predictions": [
@@ -70,7 +70,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.412574Z"
+      "generated_at": "2026-06-22T06:50:28.252884Z"
     },
     {
       "topic_id": "itc_eligibility",
@@ -138,7 +138,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.311017Z"
+      "generated_at": "2026-06-22T06:50:28.190819Z"
     },
     {
       "topic_id": "ims_itc_flow",
@@ -163,7 +163,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (39d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -181,7 +181,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.520310Z"
+      "generated_at": "2026-06-22T06:50:28.315533Z"
     },
     {
       "topic_id": "classification_disputes",
@@ -218,7 +218,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (39d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -248,7 +248,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.579366Z"
+      "generated_at": "2026-06-22T06:50:28.350568Z"
     },
     {
       "topic_id": "place_of_supply",
@@ -294,7 +294,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.669930Z"
+      "generated_at": "2026-06-22T06:50:28.404402Z"
     },
     {
       "topic_id": "real_estate",
@@ -341,7 +341,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.775918Z"
+      "generated_at": "2026-06-22T06:50:28.464394Z"
     },
     {
       "topic_id": "msme_composition",
@@ -378,7 +378,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (39d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -396,7 +396,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.723659Z"
+      "generated_at": "2026-06-22T06:50:28.434108Z"
     },
     {
       "topic_id": "return_format",
@@ -441,7 +441,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.479559Z"
+      "generated_at": "2026-06-22T06:50:28.291121Z"
     },
     {
       "topic_id": "e_invoicing",
@@ -494,7 +494,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.539621Z"
+      "generated_at": "2026-06-22T06:50:28.327118Z"
     },
     {
       "topic_id": "rcm_coverage",
@@ -527,7 +527,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (39d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -545,7 +545,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.373272Z"
+      "generated_at": "2026-06-22T06:50:28.228724Z"
     },
     {
       "topic_id": "valuation",
@@ -582,7 +582,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (39d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2260904"
           ]
@@ -600,7 +600,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.628183Z"
+      "generated_at": "2026-06-22T06:50:28.379415Z"
     },
     {
       "topic_id": "gst_on_crypto_vda",
@@ -634,7 +634,7 @@
         {
           "type": "government_forward_signal",
           "strength": 0.67,
-          "description": "PIB Finance Ministry release (35d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "description": "PIB Finance Ministry release (39d ago) with imminent language on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
             "pib_2261174"
           ]
@@ -649,7 +649,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-18T07:54:59.709896Z"
+      "generated_at": "2026-06-22T06:50:28.428064Z"
     }
   ]
 }
