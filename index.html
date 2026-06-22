@@ -699,9 +699,15 @@ function ScreenAuth({ tweak, onBack, onViewPricing, session, profile, onSessionC
 
   const handleGoogle = async () => {
     setLoading(true); setStatus(null);
-    const { error } = await _sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.origin } });
+    const { error } = await _sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: { access_type: 'offline', prompt: 'select_account' },
+      },
+    });
     if (error) { setStatus({ type:'error', msg: error.message }); setLoading(false); }
-    // On success the browser redirects; no further action needed here.
+    // On success the browser navigates to Google — no further action here.
   };
 
   const handleEmail = async () => {
@@ -1218,8 +1224,28 @@ function App() {
 
   // ── Supabase auth: restore session on mount + listen for changes ────────────
   React.useEffect(() => {
-    _sb.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data: { subscription } } = _sb.auth.onAuthStateChange((_event, s) => setSession(s));
+    // Detect OAuth callback errors in URL (e.g. ?error=access_denied)
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const oauthError = params.get('error') || hashParams.get('error');
+    if (oauthError) {
+      setScreen('auth');
+      // Clean URL so refresh doesn't re-trigger
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    _sb.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null);
+      // If we came back from OAuth with a valid session, go to home
+      if (data.session && (params.has('code') || hashParams.has('access_token'))) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    });
+    const { data: { subscription } } = _sb.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      // Close auth screen automatically on successful sign-in
+      if (event === 'SIGNED_IN') setScreen(null);
+    });
     return () => subscription.unsubscribe();
   }, []);
 
