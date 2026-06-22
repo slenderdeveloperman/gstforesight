@@ -1,18 +1,9 @@
 name: GST Foresight - Scheduled Ingest
 
-"on":
+on:
   schedule:
     - cron: '0 3 * * *'
   workflow_dispatch:
-    inputs:
-      source:
-        description: 'Specific source to ingest (leave blank for --all)'
-        required: false
-        default: ''
-      skip_embed:
-        description: 'Skip embedding step'
-        required: false
-        default: 'false'
 
 jobs:
   ingest:
