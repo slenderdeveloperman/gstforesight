@@ -1,8 +1,7 @@
-name: GST Foresight — Scheduled Ingest
+name: GST Foresight - Scheduled Ingest
 
-on:
+"on":
   schedule:
-    # 03:00 UTC daily ≈ 08:30 IST — fresh data before Indian business hours
     - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
@@ -11,7 +10,7 @@ on:
         required: false
         default: ''
       skip_embed:
-        description: 'Skip embedding step (scrape + chunk only)'
+        description: 'Skip embedding step'
         required: false
         default: 'false'
 
@@ -21,7 +20,7 @@ jobs:
     timeout-minutes: 45
 
     permissions:
-      contents: write  # needed to commit latest.json back to main
+      contents: write
 
     steps:
       - name: Checkout
@@ -81,7 +80,7 @@ jobs:
           git add data/predictions/latest.json data/news/ticker.json
 
           if git diff --cached --quiet; then
-            echo "No changes — nothing to commit"
+            echo "No changes to commit"
           else
             git commit -m "chore: update predictions + ticker [skip ci]
 
