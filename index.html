@@ -23,6 +23,7 @@
         integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
         crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -851,29 +852,61 @@ function ScreenHistory({ tweak, onBack, onViewPricing, session, onViewQuery }) {
 }
 
 // ── Screen: Pricing ───────────────────────────────────────────────────────────
-function ScreenPricing({ tweak, onBack }) {
+function ScreenPricing({ tweak, onBack, session }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const mono = `'IBM Plex Mono',monospace`;
   const serif = `'Playfair Display',serif`;
 
-  // Set this to your Razorpay payment page URL when ready to go live.
-  // While null, the Pro CTA shows a "Trials in progress" state instead of charging.
-  const RAZORPAY_PRO_URL = null;
   const CONTACT_EMAIL = 'hello@gstforesight.in';
+  const [loading, setLoading] = React.useState(false);
+  const [status, setStatus]   = React.useState(null);
+
+  const handleUpgrade = async () => {
+    if (!session) { onBack(); return; }
+    setLoading(true);
+    setStatus(null);
+    try {
+      const res = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to create subscription');
+
+      const rzp = new window.Razorpay({
+        key: 'rzp_live_T4z497oCt5OIk1',
+        subscription_id: data.subscription_id,
+        name: 'GST Foresight',
+        description: 'Pro · ₹799/month',
+        prefill: { email: session.user.email },
+        theme: { color: '#D4A853' },
+        handler: () => {
+          setStatus({ type: 'success', msg: 'Payment received. Pro activating — refreshing in 3 seconds…' });
+          setTimeout(() => window.location.reload(), 3000);
+        },
+      });
+      rzp.on('payment.failed', (r) => {
+        setStatus({ type: 'error', msg: r.error?.description || 'Payment failed. Please try again.' });
+        setLoading(false);
+      });
+      rzp.open();
+    } catch (e) {
+      setStatus({ type: 'error', msg: e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCta = (t) => {
     if (t.current) return;
-    if (t.name === 'Pro') {
-      if (RAZORPAY_PRO_URL) { window.open(RAZORPAY_PRO_URL, '_blank'); }
-      // no-op while RAZORPAY_PRO_URL is null — button label change communicates status
-    }
+    if (t.name === 'Pro')  { handleUpgrade(); return; }
     if (t.name === 'Firm') { window.open(`mailto:${CONTACT_EMAIL}?subject=GST Foresight Firm Plan`, '_blank'); }
     if (t.name === 'API')  { window.open(`mailto:${CONTACT_EMAIL}?subject=GST Foresight API Access`, '_blank'); }
   };
 
   const tiers = [
     { name:'Free', price:'₹0', sub:'forever · no card', cta:'CURRENT PLAN', current:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · 5/mo',true],['Topic alerts',false],['Query history',false],['Downloadable reports',false],['API access',false]] },
-    { name:'Pro', price:'₹799', sub:'per month · individual', cta: RAZORPAY_PRO_URL ? 'UPGRADE TO PRO' : 'TRIALS IN PROGRESS', highlight:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · unlimited',true],['Topic alerts · unlimited',true],['Query history · 12 mo',true],['Downloadable reports',true],['API access',false]] },
+    { name:'Pro', price:'₹799', sub:'per month · individual', cta: loading ? 'OPENING CHECKOUT…' : 'UPGRADE TO PRO', highlight:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · unlimited',true],['Topic alerts · unlimited',true],['Query history · 12 mo',true],['Downloadable reports',true],['API access',false]] },
     { name:'Firm', price:'₹2,499', sub:'per month · 5 seats', cta:'CONTACT SALES', lines:[['Everything in Pro',true],['5 seats included',true],['Shared alert library',true],['Firm-branded reports',true],['Priority support',true],['Onboarding session',true],['API access',false]] },
     { name:'API', price:'₹2/query', sub:'+ ₹999/mo for 1000', cta:'GET API KEY', lines:[['Predictions feed · JSON',true],['Query endpoint',true],['Webhook alerts',true],['Vector retrieval API',true],['99.5% uptime SLA',true],['Slack support channel',true],['Dashboard access',false]] },
   ];
@@ -881,6 +914,11 @@ function ScreenPricing({ tweak, onBack }) {
   return (
     <ScreenChrome T={T} tweak={tweak} breadcrumb={['PRICING']} sub="No credit card on Free · Indian businesses billed in INR" onBack={onBack} onViewPricing={() => {}}>
       <div style={{ flex:1, overflowY:'auto', padding:'40px 48px' }}>
+        {status && (
+          <div style={{ fontFamily:mono, fontSize:11, padding:'10px 16px', marginBottom:20, border:`1px solid ${status.type==='success'?T.success:T.error}`, color:status.type==='success'?T.success:T.error, background:T.bg2, letterSpacing:'0.05em' }}>
+            {status.msg}
+          </div>
+        )}
         <div style={{ textAlign:'center', maxWidth:720, margin:'0 auto 32px' }}>
           <div style={{ fontFamily:mono, fontSize:9, color:T.accent2, letterSpacing:'0.14em', marginBottom:10 }}>PRICING · 2026</div>
           <div style={{ fontFamily:serif, fontSize:34, color:T.text, lineHeight:1.15, marginBottom:12 }}>The Bloomberg Terminal for GST,<br/><em style={{ color:T.accent }}>without the price tag.</em></div>
@@ -1307,7 +1345,7 @@ function App() {
   if (screen === 'prediction') return shell(<ScreenPredictionDetail tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewAlert={(p) => goAlert(p)} prediction={activePrediction}/>);
   if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} source={sourceContext}/>);
   if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} prediction={activePrediction} session={session}/>);
-  if (screen === 'pricing') return shell(<ScreenPricing tweak={tweak} onBack={goBack}/>);
+  if (screen === 'pricing') return shell(<ScreenPricing tweak={tweak} onBack={goBack} session={session}/>);
   if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} profile={profile} onSessionChange={setSession}/>);
   if (screen === 'history') return shell(<ScreenHistory tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} onViewQuery={goQuery}/>);
 

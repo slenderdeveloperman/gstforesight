@@ -30,11 +30,9 @@ async function verifyRazorpaySignature(body, signature, secret) {
   return hex === signature;
 }
 
-// Map Razorpay plan IDs to subscription plan names in the DB.
-// These must match the plan IDs created in the Razorpay dashboard.
+// Maps Razorpay plan IDs → DB plan names. Add new plans here.
 const PLAN_MAP = {
-  'plan_pro_individual': { plan: 'pro_individual', days: 365 },
-  'plan_pro_firm':       { plan: 'pro_firm',        days: 365 },
+  'plan_T4z866Cblz5TIl': { plan: 'pro_individual', days: 30 },
 };
 
 export default async function handler(request) {
@@ -42,8 +40,8 @@ export default async function handler(request) {
     return json({ error: 'method_not_allowed' }, 405);
   }
 
-  const supabaseUrl = cleanEnv(process.env.SUPABASE_URL);
-  const serviceKey  = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
+  const supabaseUrl   = cleanEnv(process.env.SUPABASE_URL);
+  const serviceKey    = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
   const webhookSecret = cleanEnv(process.env.RAZORPAY_WEBHOOK_SECRET);
 
   if (!supabaseUrl || !serviceKey || !webhookSecret) {
@@ -51,7 +49,7 @@ export default async function handler(request) {
     return json({ error: 'config_error' }, 500);
   }
 
-  const rawBody = await request.text();
+  const rawBody  = await request.text();
   const signature = request.headers.get('x-razorpay-signature') ?? '';
 
   const valid = await verifyRazorpaySignature(rawBody, signature, webhookSecret);
@@ -67,24 +65,30 @@ export default async function handler(request) {
     return json({ error: 'invalid_json' }, 400);
   }
 
-  // Only handle payment.captured — ignore other events (refund, failed, etc.)
-  if (payload?.event !== 'payment.captured') {
-    return json({ ok: true, skipped: payload?.event });
+  const event = payload?.event;
+
+  // Extract userId, paymentId, planId from either subscription or one-time payment events.
+  let userId, paymentId, planId;
+
+  if (event === 'subscription.activated' || event === 'subscription.charged') {
+    const sub     = payload?.payload?.subscription?.entity;
+    const payment = payload?.payload?.payment?.entity;
+    userId    = sub?.notes?.user_id;
+    paymentId = payment?.id;
+    planId    = sub?.plan_id;
+  } else if (event === 'payment.captured') {
+    // Legacy one-time payment path (notes set on the order).
+    const payment = payload?.payload?.payment?.entity;
+    const notes   = payment?.notes ?? {};
+    userId    = notes.user_id;
+    paymentId = payment?.id;
+    planId    = notes.plan_id;
+  } else {
+    return json({ ok: true, skipped: event });
   }
 
-  const payment = payload?.payload?.payment?.entity;
-  if (!payment) return json({ error: 'missing_payment_entity' }, 400);
-
-  const orderId   = payment.order_id;
-  const paymentId = payment.id;
-  const notes     = payment.notes ?? {};   // notes are set at order creation time
-
-  // notes.user_id and notes.plan_id are set by the frontend when creating the Razorpay order.
-  const userId = notes.user_id;
-  const planId = notes.plan_id;
-
   if (!userId || !planId) {
-    console.error('[activate] missing user_id or plan_id in notes', notes);
+    console.error('[activate] missing user_id or plan_id', { userId, planId, event });
     return json({ error: 'missing_notes' }, 400);
   }
 
@@ -96,8 +100,8 @@ export default async function handler(request) {
 
   const validUntil = new Date(Date.now() + planConfig.days * 86_400_000).toISOString();
 
-  // Insert subscription. razorpay_payment_id has a UNIQUE constraint — Razorpay
-  // can retry webhooks, so a duplicate insert is silently ignored via ON CONFLICT.
+  // razorpay_payment_id is UNIQUE — Razorpay retries webhooks, so duplicate inserts
+  // for the same payment are silently ignored via ON CONFLICT.
   const supabaseHeaders = {
     'Authorization': `Bearer ${serviceKey}`,
     'apikey': serviceKey,
@@ -112,7 +116,6 @@ export default async function handler(request) {
       user_id: userId,
       plan: planConfig.plan,
       valid_until: validUntil,
-      razorpay_order_id: orderId,
       razorpay_payment_id: paymentId,
     }),
   });
@@ -123,6 +126,6 @@ export default async function handler(request) {
     return json({ error: 'db_error' }, 502);
   }
 
-  console.log(`[activate] Pro activated: user=${userId} plan=${planConfig.plan} until=${validUntil}`);
+  console.log(`[activate] Pro activated: user=${userId} plan=${planConfig.plan} until=${validUntil} event=${event}`);
   return json({ ok: true, plan: planConfig.plan, valid_until: validUntil });
 }
