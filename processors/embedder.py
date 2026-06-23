@@ -50,10 +50,10 @@ def _load_env() -> dict:
 class Embedder:
     def __init__(self):
         cfg = _load_env()
-        self._supabase_url = os.environ.get("SUPABASE_URL") or cfg.get("SUPABASE_URL", "")
-        self._service_key = os.environ.get("SUPABASE_SERVICE_KEY") or cfg.get("SUPABASE_SERVICE_KEY", "")
+        self._supabase_url = (os.environ.get("SUPABASE_URL") or cfg.get("SUPABASE_URL", "")).strip()
+        self._service_key = (os.environ.get("SUPABASE_SERVICE_KEY") or cfg.get("SUPABASE_SERVICE_KEY", "")).strip()
 
-        embed_secret = os.environ.get("EMBED_SECRET") or cfg.get("EMBED_SECRET", "")
+        embed_secret = (os.environ.get("EMBED_SECRET") or cfg.get("EMBED_SECRET", "")).strip()
 
         if not self._supabase_url or not self._service_key:
             raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in .env")
