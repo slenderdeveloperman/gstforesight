@@ -8,6 +8,7 @@ which predicts what topics will need clarification again.
 
 import re
 from datetime import datetime
+from typing import Optional
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from scrapers.base import BaseScraper, Document
