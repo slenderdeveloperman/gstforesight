@@ -46,11 +46,13 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+          EMBED_SECRET: ${{ secrets.EMBED_SECRET }}
         run: |
           missing=0
-          [ -z "$SUPABASE_URL" ]       && echo "MISSING: SUPABASE_URL"       && missing=1
+          [ -z "$SUPABASE_URL" ]         && echo "MISSING: SUPABASE_URL"         && missing=1
           [ -z "$SUPABASE_SERVICE_KEY" ] && echo "MISSING: SUPABASE_SERVICE_KEY" && missing=1
-          [ -z "$SARVAM_API_KEY" ]     && echo "MISSING: SARVAM_API_KEY"     && missing=1
+          [ -z "$SARVAM_API_KEY" ]       && echo "MISSING: SARVAM_API_KEY"       && missing=1
+          [ -z "$EMBED_SECRET" ]         && echo "MISSING: EMBED_SECRET"         && missing=1
           [ $missing -eq 1 ] && exit 1
           echo "All secrets present"
 
@@ -59,6 +61,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+          EMBED_SECRET: ${{ secrets.EMBED_SECRET }}
         run: HF_HUB_OFFLINE=0 python3 -m gst_foresight ingest --all
 
       - name: Generate predictions
