@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>GST Foresight — Regulatory Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,700;1,500&display=swap" rel="stylesheet"/>
 <style>
@@ -1021,9 +1022,10 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
     : 'inset 0 1px 0 rgba(255,255,255,0.6)';
 
   const docCount = liveData?.doc_count || 2841;
-  const updatedLabel = liveData
-    ? `UPDATED ${new Date(liveData.generated_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',timeZone:'Asia/Calcutta'}).toUpperCase()} 2026 · ${new Date(liveData.generated_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Calcutta',hour12:false})} IST`
-    : 'UPDATED 18 JUN 2026 · 13:24 IST';
+  const _upd = liveData ? new Date(liveData.generated_at) : null;
+  const updatedLabel = _upd
+    ? `UPDATED ${_upd.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Calcutta'}).toUpperCase()} · ${_upd.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Calcutta',hour12:false})} IST`
+    : 'LOADING…';
 
   return (
     <div style={{ width:'100%', height:'100%', background:T.bg, color:T.text, fontFamily:sans, fontSize:D.fz, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
