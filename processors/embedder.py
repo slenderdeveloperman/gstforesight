@@ -49,11 +49,16 @@ def _load_env() -> dict:
 
 class Embedder:
     def __init__(self):
-        cfg = _load_env()
-        self._supabase_url = (os.environ.get("SUPABASE_URL") or cfg.get("SUPABASE_URL", "")).strip()
-        self._service_key = (os.environ.get("SUPABASE_SERVICE_KEY") or cfg.get("SUPABASE_SERVICE_KEY", "")).strip()
+        def _clean(key: str) -> str:
+            raw = os.environ.get(key) or cfg.get(key, "")
+            # Remove ALL whitespace (including embedded \n from copy-pasted long tokens)
+            import re
+            return re.sub(r'\s+', '', raw)
 
-        embed_secret = (os.environ.get("EMBED_SECRET") or cfg.get("EMBED_SECRET", "")).strip()
+        cfg = _load_env()
+        self._supabase_url = _clean("SUPABASE_URL")
+        self._service_key  = _clean("SUPABASE_SERVICE_KEY")
+        embed_secret       = _clean("EMBED_SECRET")
 
         if not self._supabase_url or not self._service_key:
             raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in .env")
