@@ -11,3 +11,6 @@ pdfplumber>=0.11.0
 pymupdf>=1.24.0
 docling>=2.0.0
 rapidocr-onnxruntime>=1.2.0
+
+# Phase 2 — embeddings
+sentence-transformers>=3.0.0
