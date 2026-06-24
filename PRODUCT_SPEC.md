@@ -1,7 +1,7 @@
 # GST Foresight — Product Specification
-**Version**: 0.3
-**Last updated**: 2026-05-22
-**Status**: Phase 1 complete (pending reextract + predict rebuild); Phase 2 in progress
+**Version**: 0.4
+**Last updated**: 2026-06-24
+**Status**: Phase 1 complete (pending reextract + predict rebuild); Phase 2 infrastructure complete, live validation pending; Phase 3 schema written, not yet wired
 
 ---
 
@@ -277,7 +277,7 @@ Tasks:
 - [x] Add embedder module (`processors/embedder.py`) — uses Supabase pgvector (chromadb dep removed 2026-05-22)
 - [x] Vector store: Supabase pgvector (`chunks` table, `match_chunks` RPC, SECURITY DEFINER)
 - [x] Update ingest CLI to run chunk → embed pipeline after tagging
-- [ ] **Run `python -m gst_foresight reextract`** — 39 docs missing full text; URL encoding fix now applied; GST Council 50/53/54 need OCR pass
+- [ ] **Run `python -m gst_foresight reextract`** — 39 docs missing full text; URL encoding fix applied 2026-05-22; GST Council 50/53/54 need OCR pass; still pending as of 2026-06-24
 - [ ] Rebuild predictions on full-text corpus after reextract, validate against backtest cases
 
 **Exit criteria**: Prediction engine running on full document text. Backtest accuracy unchanged or improved.
@@ -305,12 +305,19 @@ Tasks:
 - [ ] Confirm ingest → `latest.json` → live predictions are in sync (predictions may be stale after reextract)
 - [ ] Test with 20 representative CA queries — manual eval: grounded signal citations? Accurate probability estimates? Target: 85% pass rate. Log failures for prompt tuning.
 
+**P2.5 — CI reliability (infrastructure)**
+- [x] Fix ticker CI failure: `scrape_ticker.py` hard-exited with code 1 when `data/processed/` absent — fixed 2026-06-24 (empty ticker write + exit 0)
+- [x] Ingest CLI now proactively creates `data/processed/` + `data/predictions/` at startup — fixed 2026-06-24
+- [x] Created `ARCHITECTURE.md` — full architecture + tech stack reference — 2026-06-24
+
 **P3 — UI fixes (polish before sharing)**
 - [x] Fix `onViewAlert` — was always opening `predictions[0]`; root cause was row `onClick` immediately navigating away before `active` could be changed; fixed 2026-05-22
 - [x] Fix single-click ↗ → `ScreenPredictionDetail` — row click now only sets `activeId` (select); navigation via ↗ button or double-click on row; fixed 2026-05-22
+- [ ] Wire `ScreenSourceDoc` to real chunks from Supabase (currently shows static mock data)
 
 **P4 — Signal quality (improves answer accuracy)**
-- [ ] Sarvam semantic tagging pass for GST Council minutes — regex tagger misses deferral language ("kept in abeyance", "further deliberation"); `sarvam-2b-v0.5` classify pass on `gst_council_minutes` chunks improves topic signal without touching the prediction engine
+- [ ] Sarvam semantic tagging pass for GST Council minutes — regex tagger misses deferral language ("kept in abeyance", "further deliberation"); `scripts/semantic_tag_council.py` exists, not yet run on full corpus
+- [ ] AAR scraper: all 3 candidate URLs returning 404 — find new CBIC advance rulings URL
 
 **Exit criteria**: Query model returns grounded responses on 85%+ of 20 test queries. Security hardening confirmed via test suite. No known UI bugs.
 
@@ -347,14 +354,15 @@ Tasks:
 
 ## 11. Open Questions
 
-| Question | Decision needed by | Owner |
-|---|---|---|
-| Sarvam API key — personal account or org account? | Before Phase 2 | Yashu |
-| ChromaDB vs FAISS for vector store | Before Phase 1 | Engineering |
-| Vercel edge function + Supabase free tier limits sufficient? | Before Phase 3 | Engineering |
-| Razorpay vs Stripe for payments? | Before Phase 3 | Yashu |
-| Hindi-language sources — priority vs. English-only first? | Before Phase 1 | Yashu |
-| Domain name — gstforesight.in ✓ decided | Closed | Yashu |
+| Question | Decision needed by | Owner | Status |
+|---|---|---|---|
+| Sarvam API key — personal account or org account? | Before Phase 2 | Yashu | Using personal key; upgrade to org before launch |
+| ChromaDB vs FAISS for vector store | Before Phase 1 | Engineering | ✓ Closed — Supabase pgvector chosen (2026-05-22) |
+| Vercel edge function + Supabase free tier limits sufficient? | Before Phase 3 | Engineering | Open — test under load before Phase 3 launch |
+| Razorpay vs Stripe for payments? | Before Phase 3 | Yashu | Open — Razorpay preferred (Indian market); plans not yet created |
+| Hindi-language sources — priority vs. English-only first? | Before Phase 1 | Yashu | Deferred — English-only first; Sarvam tagging pass handles Hindi council docs |
+| Domain name — gstforesight.in ✓ decided | Closed | Yashu | ✓ Closed |
+| Auth provider — Clerk vs Supabase Auth vs Firebase? | Before Phase 3 | Yashu | Open — Supabase Auth is already in schema; Clerk is easier to wire but adds a dependency |
 
 ---
 

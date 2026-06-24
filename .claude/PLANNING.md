@@ -534,3 +534,90 @@ Existing raw docs in `data/raw/court_judgments/` that were stored with `full_tex
 - [ ] P4: Add SRI hash to Supabase CDN `<script>` tag in `index.html`
 - [ ] P4: Run `node tests/test_security.js` against live Vercel URL
 - [ ] P4: Run `node tests/test_query_quality.js` (reset `DELETE FROM usage;` first)
+
+---
+
+# Session: GST Foresight — CI Reliability Fix + Architecture Doc
+**Date:** 2026-06-24
+**Branch / Project:** main · GST FORESIGHT
+**Commits:** `6afc534` → rebased to `00f7df5`
+
+## Goal
+Fix the failing `ticker` step in the daily GitHub Actions ingest workflow, and produce a comprehensive architecture reference document.
+
+## What Was Fixed
+
+| File | Fix |
+|------|-----|
+| `scripts/scrape_ticker.py` | `sys.exit(1)` on missing `data/processed/` replaced with empty-ticker write + `sys.exit(0)` — CI no longer hard-fails when all scrapers return nothing (network issues, GOI sites down) |
+| `gst_foresight/__main__.py` | `cmd_ingest` now proactively `mkdir` `data/processed/` and `data/predictions/` at startup, before any scraper runs — ensures downstream steps always find the dirs even on total scraper failure |
+
+**Root cause**: `data/processed/` is gitignored. In CI after a fresh checkout the directory doesn't exist. `tagger.tag_and_save()` only creates it when new documents arrive — if all scrapers fail (GOI sites down, network timeout), the directory is never created, and the ticker step hard-exits with code 1, marking the entire CI run red.
+
+**Resolution**: Double-defence — create the directory proactively at ingest startup (defence 1), and make the ticker write an empty `{"items": []}` instead of aborting if the directory is still somehow absent (defence 2).
+
+## What Was Created
+
+- **`ARCHITECTURE.md`** — comprehensive architecture + tech stack reference document covering: system diagram, all 8 scrapers, 5-stage ingest pipeline, RAG query flow, full Supabase schema, 14 named architectural decisions with rationale, security model, CI/CD workflows, local dev commands.
+
+## Ticker refresh
+`data/news/ticker.json` regenerated from latest corpus — 490 docs loaded, 40 items written. Now includes new PIB Finance releases, ICAI June newsletters, HC/SC rulings from June 2026, and CBIC Circulars 239/249/250.
+
+## Push notes
+Remote had a CI-bot commit on `main` (bot had also regenerated the ticker). Resolved via `git pull --rebase`; conflict in `ticker.json` only (both sides auto-generated it); took local version. Clean push to `00f7df5`.
+
+## Open Items Carried Forward
+
+**P0 / blockers:**
+- [ ] Confirm live query works end-to-end on deployed Vercel site (been pending since 2026-05-15; multiple sessions have approached but not confirmed)
+- [ ] Run `reextract` for 39 docs with `full_text_extracted: False` — URL encoding fix is in place, GST Council 50/53/54 need OCR pass
+- [ ] Rebuild predictions on full-text corpus after reextract; validate against backtest cases
+
+**P1 / important:**
+- [ ] Run 20-query manual eval (`node tests/test_query_quality.js`); target ≥85% grounded responses — reset `DELETE FROM usage;` first
+- [ ] Add Phase 3 Vercel env vars: `RESEND_API_KEY`, `ALERT_FROM_EMAIL`, `RAZORPAY_WEBHOOK_SECRET`
+- [ ] Enable Google OAuth in Supabase Auth dashboard → Providers
+- [ ] Create Razorpay plans `plan_pro_individual` / `plan_pro_firm`
+
+**P2 / quality:**
+- [ ] Sarvam semantic tagging pass for GST Council minutes (`scripts/semantic_tag_council.py` exists but not run on full corpus) — regex tagger misses "kept in abeyance", "further deliberation"
+- [ ] Wire `ScreenSourceDoc` to real chunks from Supabase (currently shows static mock data)
+- [ ] AAR scraper: all 3 candidate URLs still 404; find the new CBIC advance rulings URL and add as first candidate
+
+**P3 / polish:**
+- [ ] X/Twitter pipeline: feature branch `feature/x-social-signal-pipeline` is pushed; needs burner X account + RSSHub deploy on Railway before merge
+- [ ] Deploy RSSHub on Railway: new project → DIYgod/RSSHub template → get URL → add `RSSHUB_URL` GitHub secret
+- [ ] `ScreenQueryResponse` → `remaining_queries` counter display (backend returns it, UI may not render it)
+
+**P4 / deferred:**
+- [ ] Run `node tests/test_security.js` against live Vercel URL (last confirmed pass: 25/25 on 2026-05-22)
+- [ ] Add SRI hash to Supabase CDN `<script>` tag in `index.html`
+- [ ] Rotate `EMBED_SECRET` if not already done after 2026-05-22
+
+## What's Next (ordered)
+
+1. **`python -m gst_foresight reextract`** — clears the 39-doc backlog of title-only entries. Run locally, then `python -m gst_foresight predict` to rebuild predictions on full text.
+2. **Live query confirmation** — open `https://gstforesight.vercel.app`, submit a real CA query, verify structured Sarvam response.
+3. **20-query eval** — `DELETE FROM usage; node tests/test_query_quality.js`. Log failures for prompt tuning.
+4. **Phase 3 auth decision** — pick Supabase Auth (already in schema) or Clerk. Schema is fully written; just need the provider wired up.
+5. **Alert system end-to-end test** — `scripts/send_alerts.py` is written; needs `RESEND_API_KEY` + at least one row in `alert_subscriptions` to test.
+6. **Merge X pipeline** — once burner account + RSSHub are ready.
+
+## Key Commands
+
+```bash
+# Re-extract full text for 39 missing docs
+cd ~/Projects/GST\ FORESIGHT && .venv/bin/python -m gst_foresight reextract
+
+# Rebuild predictions after reextract
+.venv/bin/python -m gst_foresight predict
+
+# 20-query eval (reset usage first in Supabase SQL editor: DELETE FROM usage;)
+node tests/test_query_quality.js
+
+# Run semantic tagging pass on council minutes
+.venv/bin/python scripts/semantic_tag_council.py
+
+# Status check
+.venv/bin/python -m gst_foresight status
+```
