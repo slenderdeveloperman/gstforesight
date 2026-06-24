@@ -120,8 +120,10 @@ def main():
     print(f"\n[ticker] building from corpus — {now_ist}\n", flush=True)
 
     if not PROCESSED_DIR.exists():
-        print("[ticker] data/processed/ not found — aborting", flush=True)
-        sys.exit(1)
+        print("[ticker] data/processed/ not found — no corpus yet, writing empty ticker", flush=True)
+        OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        OUT_PATH.write_text(json.dumps({"generated_at": datetime.now(timezone.utc).isoformat(), "items": []}, indent=2))
+        sys.exit(0)
 
     docs = []
     skipped = 0

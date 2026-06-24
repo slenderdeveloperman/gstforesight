@@ -34,6 +34,10 @@ def cmd_ingest(args):
     from processors.chunker import Chunker
     from processors.embedder import Embedder
 
+    # Always ensure output dirs exist — ticker and predict steps depend on them
+    Path("data/processed").mkdir(parents=True, exist_ok=True)
+    Path("data/predictions").mkdir(parents=True, exist_ok=True)
+
     if getattr(args, "no_ocr", False):
         disable_ocr()
 
