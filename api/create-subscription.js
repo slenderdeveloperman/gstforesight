@@ -67,6 +67,31 @@ export default async function handler(request) {
   const userInfo = await getUserInfo(request, supabaseUrl, supabaseKey);
   if (!userInfo) return r({ error: 'unauthorized', message: 'Sign in to subscribe.' }, 401);
 
+  // Verify plan exists before attempting subscription creation
+  let planCheckRes;
+  try {
+    planCheckRes = await fetch(`https://api.razorpay.com/v1/plans/${planId}`, {
+      headers: {
+        'Authorization': `Basic ${btoa(`${rzpKeyId}:${rzpSecret}`)}`,
+        'Accept': 'application/json',
+      },
+    });
+  } catch (e) {
+    console.error('[create-subscription] plan check fetch error', e.message);
+    return r({ error: 'razorpay_unavailable' }, 502);
+  }
+
+  if (!planCheckRes.ok) {
+    const planErrText = await planCheckRes.text();
+    console.error('[create-subscription] plan not found', planCheckRes.status, planErrText);
+    let planErrMsg = 'Plan not found.';
+    try { planErrMsg = JSON.parse(planErrText)?.error?.description ?? planErrMsg; } catch {}
+    return r({ error: 'plan_not_found', message: planErrMsg, debug: { status: planCheckRes.status, plan_id: planId } }, 502);
+  }
+
+  const planData = await planCheckRes.json();
+  console.log('[create-subscription] plan verified:', planData.id, planData.interval, planData.item?.amount);
+
   let subRes;
   try {
     subRes = await fetch('https://api.razorpay.com/v1/subscriptions', {
@@ -74,6 +99,7 @@ export default async function handler(request) {
       headers: {
         'Authorization': `Basic ${btoa(`${rzpKeyId}:${rzpSecret}`)}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         plan_id: planId,
@@ -90,8 +116,7 @@ export default async function handler(request) {
 
   if (!subRes.ok) {
     const errText = await subRes.text();
-    console.error('[create-subscription] Razorpay error', subRes.status, errText);
-    // Surface Razorpay's error description to the client for debugging
+    console.error('[create-subscription] subscription error', subRes.status, errText);
     let rzpMsg = 'Failed to create subscription.';
     try { rzpMsg = JSON.parse(errText)?.error?.description ?? rzpMsg; } catch {}
     return r({ error: 'razorpay_error', message: rzpMsg, debug: { status: subRes.status, plan_id: planId } }, 502);
