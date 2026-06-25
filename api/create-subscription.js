@@ -1,6 +1,6 @@
 export const config = { runtime: 'edge' };
 
-const cleanEnv = v => (v ?? '').replace(/[^\x20-\x7E]/g, '');
+const cleanEnv = v => (v ?? '').replace(/[^\x20-\x7E]/g, '').trim();
 
 const ALLOWED_ORIGINS = new Set([
   'https://gstforesight.vercel.app',
