@@ -60,9 +60,19 @@ export default async function handler(request) {
   const planId      = cleanEnv(process.env.RAZORPAY_PLAN_ID);
 
   if (!rzpKeyId || !rzpSecret || !planId) {
-    console.error('[create-subscription] missing Razorpay env vars');
+    console.error('[create-subscription] missing Razorpay env vars', {
+      hasKeyId: !!rzpKeyId, hasSecret: !!rzpSecret, hasPlanId: !!planId,
+    });
     return r({ error: 'config_error' }, 500);
   }
+
+  // Log partial values to confirm env vars are correct without leaking secrets
+  console.log('[create-subscription] env check', {
+    keyId: rzpKeyId.slice(0, 12) + '…' + rzpKeyId.slice(-4),
+    secretLen: rzpSecret.length,
+    secretPrefix: rzpSecret.slice(0, 8),
+    planId,
+  });
 
   const userInfo = await getUserInfo(request, supabaseUrl, supabaseKey);
   if (!userInfo) return r({ error: 'unauthorized', message: 'Sign in to subscribe.' }, 401);
