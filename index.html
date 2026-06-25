@@ -266,6 +266,39 @@ function ScreenChrome({ T, tweak, breadcrumb, sub, onBack, onViewPricing, childr
   );
 }
 
+// ── Markdown renderer for Sarvam responses ───────────────────────────────────
+// Handles only the patterns the structured prompt produces:
+//   **bold**, - bullet, blank-line paragraph break, <think> stripping.
+// HTML-escapes all text before inserting tags — no XSS risk from corpus content.
+function renderMarkdown(raw) {
+  if (!raw) return '';
+  const text = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const bold = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  const lines = text.split('\n');
+  let html = '';
+  let inList = false;
+
+  for (const line of lines) {
+    const isBullet = /^[-•*]\s+/.test(line);
+    if (isBullet) {
+      if (!inList) { html += '<ul style="margin:10px 0 10px 0;padding-left:20px;list-style:none">'; inList = true; }
+      html += `<li style="margin-bottom:7px;padding-left:10px;position:relative"><span style="position:absolute;left:0;opacity:0.5">›</span>${bold(esc(line.replace(/^[-•*]\s+/,'')))}</li>`;
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      const escaped = esc(line);
+      if (!escaped.trim()) {
+        html += '<div style="height:10px"></div>';
+      } else {
+        html += `<p style="margin:0 0 8px">${bold(escaped)}</p>`;
+      }
+    }
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
 // ── Screen: Query Response ────────────────────────────────────────────────────
 function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, response, query }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
@@ -298,7 +331,7 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
           <div style={{ padding:'24px 32px', overflowY:'auto', flex:1 }}>
             {liveAnswer ? (
               <>
-                <div style={{ fontFamily:serif, fontSize:17, color:T.text, lineHeight:1.55, marginBottom:22, fontWeight:300 }}>{liveAnswer}</div>
+                <div style={{ fontFamily:serif, fontSize:17, color:T.text, lineHeight:1.65, marginBottom:22, fontWeight:300 }} dangerouslySetInnerHTML={{ __html: renderMarkdown(liveAnswer) }} />
                 {liveSources.length > 0 && (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:12, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
                     <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', marginRight:4 }}>SOURCES</span>
