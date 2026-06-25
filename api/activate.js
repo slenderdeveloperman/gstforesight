@@ -70,14 +70,37 @@ export default async function handler(request) {
   // Extract userId, paymentId, planId from either subscription or one-time payment events.
   let userId, paymentId, planId;
 
-  if (event === 'subscription.activated' || event === 'subscription.charged') {
+  // Payment link flow — look up user by email since notes.user_id is unavailable.
+  if (event === 'payment_link.paid') {
+    const payment = payload?.payload?.payment?.entity;
+    const email   = payment?.email;
+    paymentId     = payment?.id;
+    if (!email) {
+      console.error('[activate] payment_link.paid missing email', payload);
+      return json({ error: 'missing_email' }, 400);
+    }
+    const lookupRes = await fetch(
+      `${cleanEnv(process.env.SUPABASE_URL)}/auth/v1/admin/users?email=${encodeURIComponent(email)}`,
+      { headers: { 'Authorization': `Bearer ${cleanEnv(process.env.SUPABASE_SERVICE_KEY)}`, 'apikey': cleanEnv(process.env.SUPABASE_SERVICE_KEY) } },
+    );
+    if (!lookupRes.ok) {
+      console.error('[activate] user lookup failed', await lookupRes.text());
+      return json({ error: 'user_lookup_failed' }, 502);
+    }
+    const { users } = await lookupRes.json();
+    if (!users?.length) {
+      console.error('[activate] no user found for email', email);
+      return json({ error: 'user_not_found' }, 404);
+    }
+    userId = users[0].id;
+    planId = 'plan_T4z866Cblz5TIl'; // payment link maps to pro_individual
+  } else if (event === 'subscription.activated' || event === 'subscription.charged') {
     const sub     = payload?.payload?.subscription?.entity;
     const payment = payload?.payload?.payment?.entity;
     userId    = sub?.notes?.user_id;
     paymentId = payment?.id;
     planId    = sub?.plan_id;
   } else if (event === 'payment.captured') {
-    // Legacy one-time payment path (notes set on the order).
     const payment = payload?.payload?.payment?.entity;
     const notes   = payment?.notes ?? {};
     userId    = notes.user_id;
