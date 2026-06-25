@@ -79,6 +79,13 @@ export default async function handler(request) {
   const userInfo = await getUserInfo(request, supabaseUrl, supabaseKey);
   if (!userInfo) return r({ error: 'unauthorized', message: 'Sign in to subscribe.' }, 401);
 
+  // Probe a basic endpoint to verify credentials work at all
+  const probeRes = await fetch('https://api.razorpay.com/v1/payments?count=1', {
+    headers: { 'Authorization': `Basic ${authToken}`, 'Accept': 'application/json' },
+  });
+  const probeText = await probeRes.text();
+  console.log('[create-subscription] probe /v1/payments', probeRes.status, probeText.slice(0, 200));
+
   // Verify plan exists before attempting subscription creation
   let planCheckRes;
   try {
