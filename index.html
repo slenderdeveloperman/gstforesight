@@ -23,7 +23,7 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
         integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
         crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/dist/umd/supabase.min.js" integrity="sha384-JWEyvHh+lRf0sN/WWY+QTQwX+CyWqmNg4tkc8GQzAMEtR2wGNrCJlvnu1lHD1kDm" crossorigin="anonymous"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
@@ -319,6 +319,7 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
   const liveAnswer = response && !response.loading && !response.errorMsg && response.answer;
   const liveSources = response?.sources || [];
   const hasLive = !!(liveAnswer && liveSources.length > 0);
+  const remainingQueries = response?.remaining_queries ?? null;
 
   return (
     <ScreenChrome T={T} tweak={tweak} breadcrumb={['QUERY']} sub={hasLive ? `${liveSources.length} sources retrieved · Sarvam-M` : 'Returned in 1.42s · 8 chunks retrieved · Sarvam-M generation'} onBack={onBack} onViewPricing={onViewPricing}>
@@ -336,6 +337,13 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
                   <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:12, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
                     <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', marginRight:4 }}>SOURCES</span>
                     {liveSources.map(s => <span key={s.source_id} style={{ fontFamily:mono, fontSize:9, color:T.text2, padding:'2px 6px', border:`1px solid ${T.border}`, background:T.bg3 }}>{s.source_id}</span>)}
+                  </div>
+                )}
+                {remainingQueries !== null && (
+                  <div style={{ marginTop:16, fontFamily:mono, fontSize:10, color: remainingQueries <= 1 ? T.warn : T.text3, letterSpacing:'0.06em' }}>
+                    {remainingQueries === 0
+                      ? 'Free query limit reached · Upgrade to Pro for unlimited queries'
+                      : `${remainingQueries} free ${remainingQueries === 1 ? 'query' : 'queries'} remaining this month`}
                   </div>
                 )}
               </>
@@ -994,7 +1002,7 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
       const data = await res.json();
       const responseObj = data.error
         ? { loading:false, errorMsg: data.message || 'An error occurred.' }
-        : { loading:false, answer:data.answer, sources: data.sources || [] };
+        : { loading:false, answer:data.answer, sources: data.sources || [], remaining_queries: data.remaining_queries ?? null };
       onViewQuery && onViewQuery({ query:query.trim(), response:responseObj });
     } catch(e) {
       onViewQuery && onViewQuery({ query:query.trim(), response:{ loading:false, errorMsg:'Network error — please try again.' } });
