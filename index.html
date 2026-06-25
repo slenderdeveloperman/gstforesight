@@ -908,7 +908,7 @@ function ScreenPricing({ tweak, onBack, session }) {
       if (!res.ok) throw new Error(data.message || 'Failed to create subscription');
 
       const rzp = new window.Razorpay({
-        key: 'rzp_live_T4z497oCt5OIk1',
+        key: data.key_id,
         subscription_id: data.subscription_id,
         name: 'GST Foresight',
         description: 'Pro · ₹799/month',

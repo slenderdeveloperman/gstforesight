@@ -123,5 +123,6 @@ export default async function handler(request) {
   }
 
   const sub = await subRes.json();
-  return r({ subscription_id: sub.id });
+  // Return key_id so the frontend always uses the correct mode (test vs live)
+  return r({ subscription_id: sub.id, key_id: rzpKeyId });
 }
