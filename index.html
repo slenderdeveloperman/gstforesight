@@ -892,43 +892,11 @@ function ScreenPricing({ tweak, onBack, session }) {
   const serif = `'Playfair Display',serif`;
 
   const CONTACT_EMAIL = 'hello@gstforesight.in';
-  const [loading, setLoading] = React.useState(false);
-  const [status, setStatus]   = React.useState(null);
+  const RAZORPAY_PRO_URL = 'https://rzp.io/rzp/oQlvVzPV';
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
     if (!session) { onBack(); return; }
-    setLoading(true);
-    setStatus(null);
-    try {
-      const res = await fetch('/api/create-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to create subscription');
-
-      const rzp = new window.Razorpay({
-        key: data.key_id,
-        subscription_id: data.subscription_id,
-        name: 'GST Foresight',
-        description: 'Pro · ₹799/month',
-        prefill: { email: session.user.email },
-        theme: { color: '#D4A853' },
-        handler: () => {
-          setStatus({ type: 'success', msg: 'Payment received. Pro activating — refreshing in 3 seconds…' });
-          setTimeout(() => window.location.reload(), 3000);
-        },
-      });
-      rzp.on('payment.failed', (r) => {
-        setStatus({ type: 'error', msg: r.error?.description || 'Payment failed. Please try again.' });
-        setLoading(false);
-      });
-      rzp.open();
-    } catch (e) {
-      setStatus({ type: 'error', msg: e.message });
-    } finally {
-      setLoading(false);
-    }
+    window.open(RAZORPAY_PRO_URL, '_blank', 'noopener,noreferrer');
   };
 
   const handleCta = (t) => {
@@ -940,7 +908,7 @@ function ScreenPricing({ tweak, onBack, session }) {
 
   const tiers = [
     { name:'Free', price:'₹0', sub:'forever · no card', cta:'CURRENT PLAN', current:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · 5/mo',true],['Topic alerts',false],['Query history',false],['Downloadable reports',false],['API access',false]] },
-    { name:'Pro', price:'₹799', sub:'per month · individual', cta: loading ? 'OPENING CHECKOUT…' : 'UPGRADE TO PRO', highlight:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · unlimited',true],['Topic alerts · unlimited',true],['Query history · 12 mo',true],['Downloadable reports',true],['API access',false]] },
+    { name:'Pro', price:'₹799', sub:'per month · individual', cta:'UPGRADE TO PRO', highlight:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · unlimited',true],['Topic alerts · unlimited',true],['Query history · 12 mo',true],['Downloadable reports',true],['API access',false]] },
     { name:'Firm', price:'₹2,499', sub:'per month · 5 seats', cta:'CONTACT SALES', lines:[['Everything in Pro',true],['5 seats included',true],['Shared alert library',true],['Firm-branded reports',true],['Priority support',true],['Onboarding session',true],['API access',false]] },
     { name:'API', price:'₹2/query', sub:'+ ₹999/mo for 1000', cta:'GET API KEY', lines:[['Predictions feed · JSON',true],['Query endpoint',true],['Webhook alerts',true],['Vector retrieval API',true],['99.5% uptime SLA',true],['Slack support channel',true],['Dashboard access',false]] },
   ];
@@ -948,11 +916,6 @@ function ScreenPricing({ tweak, onBack, session }) {
   return (
     <ScreenChrome T={T} tweak={tweak} breadcrumb={['PRICING']} sub="No credit card on Free · Indian businesses billed in INR" onBack={onBack} onViewPricing={() => {}}>
       <div style={{ flex:1, overflowY:'auto', padding:'40px 48px' }}>
-        {status && (
-          <div style={{ fontFamily:mono, fontSize:11, padding:'10px 16px', marginBottom:20, border:`1px solid ${status.type==='success'?T.success:T.error}`, color:status.type==='success'?T.success:T.error, background:T.bg2, letterSpacing:'0.05em' }}>
-            {status.msg}
-          </div>
-        )}
         <div style={{ textAlign:'center', maxWidth:720, margin:'0 auto 32px' }}>
           <div style={{ fontFamily:mono, fontSize:9, color:T.accent2, letterSpacing:'0.14em', marginBottom:10 }}>PRICING · 2026</div>
           <div style={{ fontFamily:serif, fontSize:34, color:T.text, lineHeight:1.15, marginBottom:12 }}>The Bloomberg Terminal for GST,<br/><em style={{ color:T.accent }}>without the price tag.</em></div>
