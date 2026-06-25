@@ -91,7 +91,10 @@ export default async function handler(request) {
   if (!subRes.ok) {
     const errText = await subRes.text();
     console.error('[create-subscription] Razorpay error', subRes.status, errText);
-    return r({ error: 'razorpay_error', message: 'Failed to create subscription.' }, 502);
+    // Surface Razorpay's error description to the client for debugging
+    let rzpMsg = 'Failed to create subscription.';
+    try { rzpMsg = JSON.parse(errText)?.error?.description ?? rzpMsg; } catch {}
+    return r({ error: 'razorpay_error', message: rzpMsg, debug: { status: subRes.status, plan_id: planId } }, 502);
   }
 
   const sub = await subRes.json();
