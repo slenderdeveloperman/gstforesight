@@ -28,7 +28,7 @@ def load_predictions(path: Path) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-        return {p["id"]: p for p in data.get("predictions", [])}
+        return {p["topic_id"]: p for p in data.get("predictions", [])}
     except Exception as e:
         print(f"[alerts] could not load {path.name}: {e}", flush=True)
         return {}
@@ -72,7 +72,7 @@ def find_moved_topics(prev: dict, curr: dict, topic_alert_map: dict) -> list[dic
                     "prev_prob": prev_prob,
                     "curr_prob": curr_prob,
                     "topic_label": curr_pred.get("topic_label", topic_id),
-                    "prediction_id": curr_pred.get("id", ""),
+                    "prediction_id": curr_pred.get("topic_id", ""),
                     "horizon_label": curr_pred.get("horizon_label", ""),
                 })
 
