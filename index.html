@@ -903,7 +903,6 @@ function ScreenPricing({ tweak, onBack, session }) {
   const RAZORPAY_PRO_URL = 'https://rzp.io/rzp/oQlvVzPV';
 
   const handleUpgrade = () => {
-    if (!session) { onBack(); return; }
     window.open(RAZORPAY_PRO_URL, '_blank', 'noopener,noreferrer');
   };
 
