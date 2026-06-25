@@ -67,11 +67,13 @@ export default async function handler(request) {
   }
 
   // Log partial values to confirm env vars are correct without leaking secrets
+  const authToken = btoa(`${rzpKeyId}:${rzpSecret}`);
   console.log('[create-subscription] env check', {
     keyId: rzpKeyId.slice(0, 12) + '…' + rzpKeyId.slice(-4),
     secretLen: rzpSecret.length,
     secretPrefix: rzpSecret.slice(0, 8),
     planId,
+    authPrefix: authToken.slice(0, 16),  // first 16 chars of base64 to verify btoa
   });
 
   const userInfo = await getUserInfo(request, supabaseUrl, supabaseKey);
@@ -82,7 +84,7 @@ export default async function handler(request) {
   try {
     planCheckRes = await fetch(`https://api.razorpay.com/v1/plans/${planId}`, {
       headers: {
-        'Authorization': `Basic ${btoa(`${rzpKeyId}:${rzpSecret}`)}`,
+        'Authorization': `Basic ${authToken}`,
         'Accept': 'application/json',
       },
     });
@@ -107,7 +109,7 @@ export default async function handler(request) {
     subRes = await fetch('https://api.razorpay.com/v1/subscriptions', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${btoa(`${rzpKeyId}:${rzpSecret}`)}`,
+        'Authorization': `Basic ${authToken}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
