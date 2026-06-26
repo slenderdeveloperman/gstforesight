@@ -908,16 +908,12 @@ function ScreenPricing({ tweak, onBack, session }) {
 
   const handleCta = (t) => {
     if (t.current) return;
-    if (t.name === 'Pro')  { handleUpgrade(); return; }
-    if (t.name === 'Firm') { window.open(`mailto:${CONTACT_EMAIL}?subject=GST Foresight Firm Plan`, '_blank'); }
-    if (t.name === 'API')  { window.open(`mailto:${CONTACT_EMAIL}?subject=GST Foresight API Access`, '_blank'); }
+    if (t.name === 'Pro') { handleUpgrade(); return; }
   };
 
   const tiers = [
-    { name:'Free', price:'₹0', sub:'forever · no card', cta:'CURRENT PLAN', current:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · 5/mo',true],['Topic alerts',false],['Query history',false],['Downloadable reports',false],['API access',false]] },
-    { name:'Pro', price:'₹799', sub:'per month · individual', cta:'UPGRADE TO PRO', highlight:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · unlimited',true],['Topic alerts · unlimited',true],['Query history · 12 mo',true],['Downloadable reports',true],['API access',false]] },
-    { name:'Firm', price:'₹2,499', sub:'per month · 5 seats', cta:'CONTACT SALES', lines:[['Everything in Pro',true],['5 seats included',true],['Shared alert library',true],['Firm-branded reports',true],['Priority support',true],['Onboarding session',true],['API access',false]] },
-    { name:'API', price:'₹2/query', sub:'+ ₹999/mo for 1000', cta:'GET API KEY', lines:[['Predictions feed · JSON',true],['Query endpoint',true],['Webhook alerts',true],['Vector retrieval API',true],['99.5% uptime SLA',true],['Slack support channel',true],['Dashboard access',false]] },
+    { name:'Free', price:'₹0', sub:'forever · no card', cta:'CURRENT PLAN', current:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · 5/mo',true],['Topic alerts',false],['Query history',false],['Downloadable reports',false]] },
+    { name:'Pro', price:'₹799', sub:'per month · individual', cta:'UPGRADE TO PRO', highlight:true, lines:[['Predictions dashboard',true],['Signal breakdowns',true],['Query model · unlimited',true],['Topic alerts · unlimited',true],['Query history · 12 mo',true],['Downloadable reports',true]] },
   ];
 
   return (
@@ -928,7 +924,7 @@ function ScreenPricing({ tweak, onBack, session }) {
           <div style={{ fontFamily:serif, fontSize:34, color:T.text, lineHeight:1.15, marginBottom:12 }}>The Bloomberg Terminal for GST,<br/><em style={{ color:T.accent }}>without the price tag.</em></div>
           <div style={{ fontSize:14, color:T.text2, lineHeight:1.65, fontWeight:300 }}>Free for individual CAs and curious browsers. Pro is for firms running advisory practices on this. API for fintechs building on top of the prediction feed.</div>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:0, border:`1px solid ${T.border}`, maxWidth:1200, margin:'0 auto' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:0, border:`1px solid ${T.border}`, maxWidth:1200, margin:'0 auto' }}>
           {tiers.map((t,i) => (
             <div key={t.name} style={{ padding:'24px 20px', borderRight:i<tiers.length-1?`1px solid ${T.border}`:'none', background:t.highlight?T.bg2:T.bg, position:'relative' }}>
               {t.highlight && <div style={{ position:'absolute', top:-1, left:-1, right:-1, height:3, background:T.accent }}/>}
