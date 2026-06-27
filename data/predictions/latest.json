@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-26T07:51:53.934890Z",
-  "doc_count": 261,
+  "generated_at": "2026-06-27T07:29:22.530218Z",
+  "doc_count": 259,
   "prediction_count": 10,
   "predictions": [
     {
@@ -48,7 +48,41 @@
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.687036Z"
+      "generated_at": "2026-06-27T07:29:22.303873Z"
+    },
+    {
+      "topic_id": "place_of_supply",
+      "topic_label": "Place of Supply",
+      "probability": 79.1,
+      "horizon_label": "Next GST Council meeting",
+      "horizon_days": 90,
+      "signal_count": 2,
+      "signals": [
+        {
+          "type": "council_deferred_item",
+          "strength": 0.92,
+          "description": "Item deferred in 24 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "source_docs": [
+            "gst_council_50",
+            "gst_council_53",
+            "gst_council_31",
+            "gst_council_25",
+            "gst_council_05"
+          ]
+        },
+        {
+          "type": "budget_speech_phrase",
+          "strength": 0.68,
+          "description": "Budget speech (2025, 2022, 2019, 2012) contained action language \u2014 older signal, moderate predictive weight",
+          "source_docs": [
+            "budget_speech_2025",
+            "budget_speech_2022",
+            "budget_speech_2019",
+            "budget_speech_2012"
+          ]
+        }
+      ],
+      "generated_at": "2026-06-27T07:29:22.379960Z"
     },
     {
       "topic_id": "msme_composition",
@@ -83,7 +117,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.802904Z"
+      "generated_at": "2026-06-27T07:29:22.420950Z"
     },
     {
       "topic_id": "real_estate",
@@ -118,7 +152,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.876470Z"
+      "generated_at": "2026-06-27T07:29:22.472260Z"
     },
     {
       "topic_id": "itc_eligibility",
@@ -165,7 +199,7 @@
         {
           "type": "judicial_split",
           "strength": 0.8,
-          "description": "15 rulings across 9 courts/tribunals (Allahabad High Court, Bombay High Court, Calcutta High Court (Appellete Side), Delhi High Court) \u2014 multi-forum litigation on the same GST issue reliably precedes CBIC clarification",
+          "description": "16 rulings across 9 courts/tribunals (Allahabad High Court, Bombay High Court, Calcutta High Court (Appellete Side), Delhi High Court) \u2014 multi-forum litigation on the same GST issue reliably precedes CBIC clarification",
           "source_docs": [
             "judgment_62c52f87826f",
             "judgment_e4c67300260b",
@@ -175,49 +209,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.419903Z"
-    },
-    {
-      "topic_id": "place_of_supply",
-      "topic_label": "Place of Supply",
-      "probability": 68.0,
-      "horizon_label": "Next GST Council meeting",
-      "horizon_days": 90,
-      "signal_count": 3,
-      "signals": [
-        {
-          "type": "council_deferred_item",
-          "strength": 0.92,
-          "description": "Item deferred in 24 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
-          "source_docs": [
-            "gst_council_50",
-            "gst_council_53",
-            "gst_council_31",
-            "gst_council_25",
-            "gst_council_05"
-          ]
-        },
-        {
-          "type": "budget_speech_phrase",
-          "strength": 0.68,
-          "description": "Budget speech (2025, 2022, 2019, 2012) contained action language \u2014 older signal, moderate predictive weight",
-          "source_docs": [
-            "budget_speech_2025",
-            "budget_speech_2022",
-            "budget_speech_2019",
-            "budget_speech_2012"
-          ]
-        },
-        {
-          "type": "government_forward_signal",
-          "strength": 0.32,
-          "description": "PIB Finance Ministry release (unknown date) on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
-          "source_docs": [
-            "pib_2261235"
-          ]
-        }
-      ],
-      "generated_at": "2026-06-26T07:51:53.762402Z"
+      "generated_at": "2026-06-27T07:29:22.026068Z"
     },
     {
       "topic_id": "return_format",
@@ -250,12 +242,12 @@
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.596925Z"
+      "generated_at": "2026-06-27T07:29:22.212893Z"
     },
     {
       "topic_id": "rate_rationalisation",
       "topic_label": "Rate Changes",
-      "probability": 63.8,
+      "probability": 63.2,
       "horizon_label": "Next GST Council meeting",
       "horizon_days": 90,
       "signal_count": 5,
@@ -295,27 +287,26 @@
         },
         {
           "type": "government_forward_signal",
-          "strength": 0.36,
-          "description": "2 PIB Finance releases on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "strength": 0.32,
+          "description": "PIB Finance Ministry release (unknown date) on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
-            "pib_2258785",
-            "pib_2261235"
+            "pib_2269253"
           ]
         },
         {
           "type": "judicial_split",
           "strength": 0.8,
-          "description": "14 rulings across 8 courts/tribunals (Calcutta High Court, Calcutta High Court (Appellete Side), Delhi High Court, Gujarat High Court) \u2014 multi-forum litigation on the same GST issue reliably precedes CBIC clarification",
+          "description": "15 rulings across 8 courts/tribunals (Calcutta High Court, Calcutta High Court (Appellete Side), Delhi High Court, Gujarat High Court) \u2014 multi-forum litigation on the same GST issue reliably precedes CBIC clarification",
           "source_docs": [
             "judgment_90faac735c39",
-            "judgment_1d50d6aa2625",
+            "judgment_435c06b908c7",
             "judgment_4eb7a3e29862",
             "judgment_934748e26df2",
             "judgment_e4c67300260b"
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.521372Z"
+      "generated_at": "2026-06-27T07:29:22.134997Z"
     },
     {
       "topic_id": "e_invoicing",
@@ -346,7 +337,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.648413Z"
+      "generated_at": "2026-06-27T07:29:22.265803Z"
     },
     {
       "topic_id": "valuation",
@@ -381,7 +372,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.727459Z"
+      "generated_at": "2026-06-27T07:29:22.344723Z"
     },
     {
       "topic_id": "gst_on_crypto_vda",
@@ -409,7 +400,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-26T07:51:53.798140Z"
+      "generated_at": "2026-06-27T07:29:22.416167Z"
     }
   ]
 }
