@@ -972,6 +972,11 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
   const [query, setQuery] = React.useState('');
   const [askState, setAskState] = React.useState('idle');
   const [queryCount, setQueryCount] = React.useState(getQueryUsage());
+  const [nowIST, setNowIST] = React.useState(() => new Date());
+  React.useEffect(() => {
+    const t = setInterval(() => setNowIST(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const filtered = predictions.filter(p => {
     if (filter==='all') return true;
@@ -1043,7 +1048,9 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
           <div style={{ display:'flex', alignItems:'center', gap:20, padding:'0 22px', flex:1 }}>
             <Meta T={T} dot label={updatedLabel}/>
             <span style={{ fontFamily:mono, fontSize:11, color:T.border2, letterSpacing:'0.04em' }}>·</span>
-            <span style={{ fontFamily:mono, fontSize:11, color:T.text3, letterSpacing:'0.12em', textTransform:'uppercase' }}>Foresight on demand</span>
+            <span style={{ fontFamily:mono, fontSize:11, color:T.text3, letterSpacing:'0.12em', textTransform:'uppercase' }}>
+              {nowIST.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Calcutta'}).toUpperCase()} · {nowIST.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Calcutta',hour12:false})} IST
+            </span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:9, padding:'0 22px', borderLeft:`1px solid ${T.border}` }}>
             <Pill T={T} label={tweak.dark?'LIGHT':'DARK'} onClick={onToggleDark}/>
@@ -1308,22 +1315,30 @@ function App() {
   }, []);
 
   React.useEffect(() => {
-    fetch('./data/predictions/latest.json?_=' + Date.now())
-      .then(r => r.json())
-      .then(data => {
-        if (data?.predictions?.length > 0 && data.doc_count > 0) {
-          setLivePredictions(data.predictions.map(normalizePrediction));
-          setLiveData(data);
-        }
-      })
-      .catch(() => {});
+    const fetchPredictions = () =>
+      fetch('./data/predictions/latest.json?_=' + Date.now())
+        .then(r => r.json())
+        .then(data => {
+          if (data?.predictions?.length > 0 && data.doc_count > 0) {
+            setLivePredictions(data.predictions.map(normalizePrediction));
+            setLiveData(data);
+          }
+        })
+        .catch(() => {});
+    fetchPredictions();
+    const predTimer = setInterval(fetchPredictions, 30 * 60 * 1000);
+    return () => clearInterval(predTimer);
   }, []);
 
   React.useEffect(() => {
-    fetch('./data/news/ticker.json?_=' + Date.now())
-      .then(r => r.json())
-      .then(data => { if (data?.items?.length > 0) setLiveTicker(data.items); })
-      .catch(() => {});
+    const fetchTicker = () =>
+      fetch('./data/news/ticker.json?_=' + Date.now())
+        .then(r => r.json())
+        .then(data => { if (data?.items?.length > 0) setLiveTicker(data.items); })
+        .catch(() => {});
+    fetchTicker();
+    const tickerTimer = setInterval(fetchTicker, 30 * 60 * 1000);
+    return () => clearInterval(tickerTimer);
   }, []);
 
   // Sync body background so iOS scroll-bounce and mobile safe areas don't bleed dark in light mode
