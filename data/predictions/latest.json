@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-27T07:29:22.530218Z",
-  "doc_count": 259,
+  "generated_at": "2026-06-28T07:56:31.210563Z",
+  "doc_count": 261,
   "prediction_count": 10,
   "predictions": [
     {
@@ -48,7 +48,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.303873Z"
+      "generated_at": "2026-06-28T07:56:30.975932Z"
     },
     {
       "topic_id": "place_of_supply",
@@ -82,42 +82,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.379960Z"
-    },
-    {
-      "topic_id": "msme_composition",
-      "topic_label": "MSME / Composition Scheme",
-      "probability": 79.1,
-      "horizon_label": "Next GST Council meeting",
-      "horizon_days": 90,
-      "signal_count": 2,
-      "signals": [
-        {
-          "type": "council_deferred_item",
-          "strength": 0.92,
-          "description": "Item deferred in 39 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
-          "source_docs": [
-            "gst_council_29",
-            "gst_council_50",
-            "gst_council_53",
-            "gst_council_31",
-            "gst_council_17"
-          ]
-        },
-        {
-          "type": "budget_speech_phrase",
-          "strength": 0.68,
-          "description": "Budget speech (2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2016, 2015, 2014, 2013, 2012, 2003, 2001) contained action language \u2014 older signal, moderate predictive weight",
-          "source_docs": [
-            "budget_speech_2023",
-            "budget_speech_2024",
-            "budget_speech_2013",
-            "budget_speech_2014",
-            "budget_speech_2025"
-          ]
-        }
-      ],
-      "generated_at": "2026-06-27T07:29:22.420950Z"
+      "generated_at": "2026-06-28T07:56:31.058281Z"
     },
     {
       "topic_id": "real_estate",
@@ -152,7 +117,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.472260Z"
+      "generated_at": "2026-06-28T07:56:31.152487Z"
     },
     {
       "topic_id": "itc_eligibility",
@@ -209,7 +174,51 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.026068Z"
+      "generated_at": "2026-06-28T07:56:30.708584Z"
+    },
+    {
+      "topic_id": "msme_composition",
+      "topic_label": "MSME / Composition Scheme",
+      "probability": 68.9,
+      "horizon_label": "Next GST Council meeting",
+      "horizon_days": 90,
+      "signal_count": 3,
+      "signals": [
+        {
+          "type": "council_deferred_item",
+          "strength": 0.92,
+          "description": "Item deferred in 39 GST Council meeting(s) \u2014 repeated deferrals indicate imminent resolution",
+          "source_docs": [
+            "gst_council_29",
+            "gst_council_50",
+            "gst_council_53",
+            "gst_council_31",
+            "gst_council_17"
+          ]
+        },
+        {
+          "type": "budget_speech_phrase",
+          "strength": 0.68,
+          "description": "Budget speech (2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2016, 2015, 2014, 2013, 2012, 2003, 2001) contained action language \u2014 older signal, moderate predictive weight",
+          "source_docs": [
+            "budget_speech_2023",
+            "budget_speech_2024",
+            "budget_speech_2013",
+            "budget_speech_2014",
+            "budget_speech_2025"
+          ]
+        },
+        {
+          "type": "government_forward_signal",
+          "strength": 0.36,
+          "description": "2 PIB Finance releases on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
+          "source_docs": [
+            "pib_2265050",
+            "pib_2256300"
+          ]
+        }
+      ],
+      "generated_at": "2026-06-28T07:56:31.098716Z"
     },
     {
       "topic_id": "return_format",
@@ -242,7 +251,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.212893Z"
+      "generated_at": "2026-06-28T07:56:30.887804Z"
     },
     {
       "topic_id": "rate_rationalisation",
@@ -290,7 +299,7 @@
           "strength": 0.32,
           "description": "PIB Finance Ministry release (unknown date) on this topic \u2014 ministry-level attention typically precedes Council action within 1\u20132 meetings",
           "source_docs": [
-            "pib_2269253"
+            "pib_2256300"
           ]
         },
         {
@@ -306,7 +315,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.134997Z"
+      "generated_at": "2026-06-28T07:56:30.808793Z"
     },
     {
       "topic_id": "e_invoicing",
@@ -337,7 +346,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.265803Z"
+      "generated_at": "2026-06-28T07:56:30.939590Z"
     },
     {
       "topic_id": "valuation",
@@ -372,7 +381,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.344723Z"
+      "generated_at": "2026-06-28T07:56:31.023144Z"
     },
     {
       "topic_id": "gst_on_crypto_vda",
@@ -400,7 +409,7 @@
           ]
         }
       ],
-      "generated_at": "2026-06-27T07:29:22.416167Z"
+      "generated_at": "2026-06-28T07:56:31.093916Z"
     }
   ]
 }
