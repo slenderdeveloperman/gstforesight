@@ -706,3 +706,95 @@ vercel
 # Verify get_recent_topics works for a known user (run in Supabase SQL editor)
 select * from get_recent_topics('<user-uuid>'::uuid, 3);
 ```
+
+---
+
+# Session: GST Foresight — Live Prediction Track Record
+**Date:** 2026-06-29
+**Branch / Worktree:** `worktree-track-record-page` · GST FORESIGHT
+**Commits:** `3017584` (implementation), `486f37d` (sidecar initialisation) → cherry-picked to `main` as `cf2fcf7` + `7ed10a9`
+
+## Goal
+Design, critically review, and implement a full live prediction track record system — a public, auditable scorecard that anchors every GST Foresight prediction to a git commit SHA before any outcome occurs, then automatically resolves outcomes against new CBIC circulars and GST Council decisions on a 4-day CI cycle.
+
+## Context & Background
+
+**Trust model**: The core value proposition is that predictions are committed *before* outcomes are known, making post-hoc manipulation detectable. Git SHA + `source_committed_at` provide practical (not cryptographic) evidence. Methodology banner softened to "best-effort practical evidence" — CBIC doesn't sign commit timestamps.
+
+**Resolution document types**: CBIC circulars, GST Council minutes (decision-keyword gated), Finance Act, CBIC notifications. AARs, court judgments, budget speeches, PIB releases, parliamentary questions = signals only — they cannot be used to resolve predictions (self-confirming evidence risk).
+
+**Scheduling**: Early design used `DAY_OF_YEAR % 4` clock-position gating — fragile because a single missed CI day shifts all future runs. Replaced with `last_resolution_run` interval check (4 days from last run, stored in `data/track-record.json`).
+
+**Scoring**: Binary accuracy on small N is misleading (3/3 = 100%). Brier score (`mean((p_i − o_i)²)`) measures calibration — lower is better, 0.25 = random 50%-guesser baseline. Wilson 95% CI on binary accuracy; both suppressed until `min_resolved_for_accuracy: 10`.
+
+**Multi-tag containment**: Resolution match is `row["topic_id"] in _doc_tags(doc)`, not `row["topic_id"] == doc["topic_id"]`. CBIC circulars routinely cover multiple topics; exact match silently blocked valid resolutions.
+
+**Cooldown**: After `expired_no_match`, a topic enters cooldown for `horizon_days × 0.5` days. Prevents gaming by rapidly re-predicting the same outcome after the deadline passes.
+
+## Decisions Made
+
+- **Brier score primary, binary accuracy secondary** — Brier penalises confident wrong predictions; binary is informative but shown with CI and suppressed on small N.
+- **Wilson CI over normal approximation** — Wilson is stable near p=0 and p=1 where normal approximation breaks down. Implemented from formula directly (no scipy dependency in the resolve script).
+- **SHA256 sidecar for tamper detection** — written to `data/track-record.sha256` alongside `data/track-record.json`; resolver raises `RuntimeError` if sidecar exists and doesn't match.
+- **`source_committed_at` alongside `source_commit`** — preserves the commit timestamp string even if the SHA changes after a rebase (the timestamp doesn't change, even if the SHA does).
+- **History dir as append-only evidence** — `python -m gst_foresight snapshot` writes `data/predictions/history/<today>.json` with no-overwrite guarantee. Daily CI snapshot creates an immutable archive.
+- **Backfill does NOT auto-resolve** — historical resolution docs are not committed to git, so we cannot know what documents existed at each prediction time. Backfill only registers; resolution runs forward from today.
+- **`probability_at_resolution` field** — records the model's confidence at resolution time, not just at prediction time. Allows tracking whether probability drifted before the outcome was confirmed.
+- **GST Council decision keywords** — council minutes are only resolution-eligible if the text contains a decision keyword (`approved`, `decided`, `resolved`, etc.). A deferral or "noted for further deliberation" does not count.
+
+## What Was Built / Changed
+
+| File | Change |
+|------|--------|
+| `predictors/resolve_track_record.py` | **New** — full resolution engine: `_parse_utc`, `_is_resolution_doc`, `_resolves_prediction`, `_is_in_cooldown`, `_compute_scorecard` (Brier + Wilson CI), `validate_integrity`, `write_with_integrity`, `run(force=False)` |
+| `data/track-record.json` | Schema v1 → v2 migration: `status: "tracking"` → `"pending"`, `hits`/`misses` → `materialised`/`expired_no_match`, full new field set on all 12 rows, `meta.last_resolution_run`, `meta.schema_version: 2` |
+| `data/track-record.sha256` | **New** — SHA256 sidecar; `abbde486...` (changes on each write) |
+| `data/predictions/history/` | **New** directory with `.gitkeep` |
+| `track-record.html` | 5-cell scorecard (adds Brier); accuracy suppressed with "Need N resolved (have X)"; Wilson CI display; `badge()` handles `materialised`/`expired_no_match` + legacy names; methodology banner softened |
+| `gst_foresight/__main__.py` | Added `cmd_snapshot` + `cmd_resolve` functions; wired as `snapshot` and `resolve [--force]` subcommands |
+| `scripts/backfill_track_record.py` | **New** — seeds track-record.json from git log of `latest.json`; idempotent (`open_topics` guard skips duplicate pending rows); SHA256 updated after write |
+| `tests/test_track_record.py` | **New** — 37 tests: §9.1 registration/resolution/doc-type/multi-tag; §9.2 expiry/cooldown/UTC; §9.3 snapshot; §9.4 Brier/Wilson/threshold; §9.5 SHA256 integrity; §9.6 datetime parsing; integration full-lifecycle |
+| `.github/workflows/ingest_daily.yml` | Added `snapshot` + `resolve` steps after predict; git add extended to cover `history/`, `track-record.json`, `track-record.sha256` |
+
+## Blockers & Open Issues
+
+- [ ] **Backfill 0 rows added (expected)**: all 12 topic IDs already have open `pending` rows from migration. Backfill will register historical rows when topics expire and re-open post-cooldown.
+- [ ] **No resolutions yet**: 0 processed documents in the worktree at run time — resolver loaded 0 docs. First real resolutions happen when ingest runs on CI and the resolver has docs to scan.
+- [ ] **Reextract still pending**: 39 docs without full text — unresolved from prior sessions.
+- [ ] **X pipeline not merged**: `feature/x-social-signal-pipeline` branch still not merged (waiting on `X_ACCOUNT_JSON` + `RSSHUB_URL` secrets).
+
+## Key Commands
+
+```bash
+# Daily CI cycle (runs automatically via GitHub Actions)
+python -m gst_foresight snapshot          # daily; no-overwrite guarantee
+python -m gst_foresight resolve           # self-gates on 4-day interval
+python -m gst_foresight resolve --force   # bypass interval gate
+
+# Backfill from git history (idempotent)
+python3 scripts/backfill_track_record.py --dry-run
+python3 scripts/backfill_track_record.py
+
+# Verify integrity manually
+python3 -c "
+import json, sys; sys.path.insert(0, '.')
+from predictors.resolve_track_record import validate_integrity
+validate_integrity(json.loads(open('data/track-record.json').read()))
+print('OK')
+"
+
+# Run full test suite
+.venv/bin/python -m pytest tests/test_track_record.py -v
+```
+
+## Supabase Phase 4 Schema Migration (same session)
+
+Phase 4 (Personalization) schema was attempted via Supabase SQL editor but failed with:
+```
+ERROR: 42601: syntax error at or near 'FUNCTION' LINE 14
+```
+Root cause: Unicode box-drawing characters (`──`) in SQL comments corrupted the parser's byte stream. Fixed by running the SQL via `mcp__plugin_supabase_supabase__apply_migration` with clean ASCII SQL. Migration applied successfully:
+- `ALTER TABLE query_history ADD COLUMN IF NOT EXISTS topic_tags text`
+- `DROP FUNCTION IF EXISTS save_query(uuid, text, text, text)` + 5-param version
+- `get_recent_topics(p_user_id uuid, p_limit int)` RPC created
+- REVOKE/GRANT hardening: both functions restricted to `authenticated` + `service_role`

@@ -254,6 +254,43 @@ def cmd_reextract(args):
     print(f"\n[reextract] done — {updated} updated, {skipped} skipped (already extracted), {failed} failed")
 
 
+def cmd_snapshot(_args):
+    """Copy latest.json to data/predictions/history/<today>.json.
+
+    Written once per day — never overwrites an existing file. The history/
+    directory is the append-only evidentiary record for the live track record.
+    """
+    import shutil
+    from datetime import date
+
+    latest = Path("data/predictions/latest.json")
+    if not latest.exists():
+        print("[snapshot] latest.json not found — run predict first")
+        return
+
+    history_dir = Path("data/predictions/history")
+    history_dir.mkdir(parents=True, exist_ok=True)
+
+    dest = history_dir / f"{date.today().isoformat()}.json"
+    if dest.exists():
+        print(f"[snapshot] {dest} already exists — not overwriting (append-only guarantee)")
+        return
+
+    shutil.copy(latest, dest)
+    print(f"[snapshot] wrote {dest}")
+
+
+def cmd_resolve(args):
+    """Run the track record resolution cycle.
+
+    Registers new predictions, tries to resolve open ones, and expires any
+    that have run past their horizon. Skips automatically if run more recently
+    than the configured interval (default 4 days) — use --force to override.
+    """
+    from predictors.resolve_track_record import run as resolve_run
+    resolve_run(force=getattr(args, "force", False))
+
+
 def cmd_embed(_args):
     """Embed all un-indexed chunks. Run separately when memory allows."""
     import gc, json as _json
@@ -300,7 +337,11 @@ def main():
     sub.add_parser("embed", help="Embed all chunked docs into Supabase pgvector (run separately if ingest --skip-embed was used)")
     sub.add_parser("reextract", help="Re-fetch PDFs for raw docs where full_text_extracted=False")
     sub.add_parser("predict", help="Generate predictions from processed data")
+    sub.add_parser("snapshot", help="Copy latest.json to data/predictions/history/<today>.json")
     sub.add_parser("status", help="Show data and prediction status")
+
+    resolve_parser = sub.add_parser("resolve", help="Run the 4-day track record resolution cycle")
+    resolve_parser.add_argument("--force", action="store_true", help="Run even if interval hasn't elapsed")
 
     args = parser.parse_args()
 
@@ -312,6 +353,10 @@ def main():
         cmd_reextract(args)
     elif args.command == "predict":
         cmd_predict(args)
+    elif args.command == "snapshot":
+        cmd_snapshot(args)
+    elif args.command == "resolve":
+        cmd_resolve(args)
     elif args.command == "status":
         cmd_status(args)
     else:

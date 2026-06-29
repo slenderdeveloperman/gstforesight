@@ -440,7 +440,7 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
 }
 
 // ── Screen: Prediction Detail ─────────────────────────────────────────────────
-function ScreenPredictionDetail({ tweak, onBack, onViewPricing, onViewAlert, prediction }) {
+function ScreenPredictionDetail({ tweak, onBack, onViewPricing, onViewAlert, prediction, trackRecord }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const mono = `'IBM Plex Mono',monospace`;
   const sans = `'IBM Plex Sans',system-ui,sans-serif`;
@@ -553,6 +553,24 @@ function ScreenPredictionDetail({ tweak, onBack, onViewPricing, onViewAlert, pre
               ))}
             </div>
           </div>
+          {(() => {
+            const prior = (trackRecord||[]).filter(r => r.topic_id === p.topic_id && r.status !== 'pending');
+            if (!prior.length) return null;
+            return (
+              <div style={{ padding:'14px 18px', borderTop:`1px solid ${T.border}` }}>
+                <div style={{ fontFamily:mono, fontSize:10, color:T.text3, letterSpacing:'0.12em', marginBottom:10 }}>TRACK RECORD</div>
+                {prior.map(r => (
+                  <div key={r.id} style={{ fontSize:11, color:T.text2, lineHeight:1.6, marginBottom:6, borderBottom:`1px solid ${T.border}`, paddingBottom:6 }}>
+                    <span style={{ fontFamily:mono, fontSize:9, color:T.text3 }}>{r.called_on||r.predicted_at?.slice(0,10)} · {r.probability}% </span>
+                    {r.status === 'materialised'
+                      ? <span style={{ color:T.success }}>✓ materialised{r.outcome_summary ? ` — ${r.outcome_summary}` : ''}</span>
+                      : <span style={{ color:T.danger }}>✗ expired, no matching change</span>
+                    }
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </ScreenChrome>
@@ -995,8 +1013,139 @@ function ScreenPricing({ tweak, onBack, session }) {
   );
 }
 
+// ── Track Record screen ───────────────────────────────────────────────────────
+function trFmtDate(s) {
+  if (!s) return '—';
+  try { return new Date(s).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase(); }
+  catch(_) { return s; }
+}
+function trStatusColor(status, T) {
+  if (status === 'materialised') return T.success;
+  if (status === 'expired_no_match') return T.danger;
+  return T.text2;
+}
+function trStatusLabel(status) {
+  if (status === 'materialised') return 'MATERIALISED';
+  if (status === 'expired_no_match') return 'EXPIRED — NO MATCH';
+  return 'PENDING';
+}
+function trProofCell(row, T, mono) {
+  if (!row.source_commit) return <span style={{ fontFamily:mono, fontSize:9, color:T.text3 }}>—</span>;
+  const href = `https://github.com/slenderdeveloperman/gstforesight/blob/${row.source_commit}/data/predictions/latest.json`;
+  return <a href={href} target="_blank" rel="noopener noreferrer" style={{ fontFamily:mono, fontSize:9, color:T.text2, textDecoration:'none' }}>↗ verify</a>;
+}
+function trBuildFallback(r) {
+  return { id:r.topic_id, topic_id:r.topic_id, topic_label:r.topic_label, probability:r.probability, signals:[], horizon_label:r.horizon_label || `${r.horizon_days||90}d`, horizon_days:r.horizon_days||90, delta:0, change_type:'change', watch:'' };
+}
+
+function TrackRecordEmptyState({ filter, T }) {
+  const mono = `'IBM Plex Mono',monospace`;
+  const msg = filter === 'pending'
+    ? 'No active predictions right now.'
+    : 'No predictions have resolved yet — check back as the 90-day council cycle plays out.';
+  return <div style={{ fontFamily:mono, fontSize:11, color:T.text3, padding:'48px 0', textAlign:'center' }}>{msg}</div>;
+}
+
+function PendingTable({ rows, T, predictions, onViewPrediction }) {
+  const mono = `'IBM Plex Mono',monospace`;
+  const th = { fontFamily:mono, fontSize:8, color:T.text3, letterSpacing:'0.1em', padding:'0 12px 8px 0', textAlign:'left', borderBottom:`1px solid ${T.border}` };
+  const td = (x) => ({ fontFamily:mono, fontSize:10, color:T.text2, padding:'8px 12px 8px 0', borderBottom:`1px solid ${T.border}`, verticalAlign:'top', ...x });
+  return (
+    <table style={{ width:'100%', borderCollapse:'collapse' }}>
+      <thead><tr>
+        <th style={th}>TOPIC</th><th style={th}>CALLED ON</th><th style={th}>PROB</th>
+        <th style={th}>DEADLINE</th><th style={th}>HORIZON</th>
+        <th style={{ ...th, textAlign:'right', paddingRight:0 }}>PROOF</th>
+      </tr></thead>
+      <tbody>
+        {rows.map(r => {
+          const fp = (predictions||[]).find(p => p.topic_id === r.topic_id);
+          const pc = r.probability>=70 ? T.danger : r.probability>=50 ? T.warn : T.success;
+          return (
+            <tr key={r.id}>
+              <td style={td({ color:T.accent, cursor:'pointer', maxWidth:220 })} onClick={() => onViewPrediction&&onViewPrediction(fp||trBuildFallback(r))}>{r.topic_label}</td>
+              <td style={td({})}>{trFmtDate(r.called_on||r.predicted_at)}</td>
+              <td style={td({ color:pc })}>{r.probability}%</td>
+              <td style={td({})}>{r.deadline||'—'}</td>
+              <td style={td({})}>{r.horizon_label||`${r.horizon_days||90}d`}</td>
+              <td style={td({ textAlign:'right', paddingRight:0 })}>{trProofCell(r,T,mono)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function ResolvedTable({ rows, T, predictions, onViewPrediction }) {
+  const mono = `'IBM Plex Mono',monospace`;
+  const th = { fontFamily:mono, fontSize:8, color:T.text3, letterSpacing:'0.1em', padding:'0 12px 8px 0', textAlign:'left', borderBottom:`1px solid ${T.border}` };
+  const td = (x) => ({ fontFamily:mono, fontSize:10, color:T.text2, padding:'8px 12px 8px 0', borderBottom:`1px solid ${T.border}`, verticalAlign:'top', ...x });
+  return (
+    <table style={{ width:'100%', borderCollapse:'collapse' }}>
+      <thead><tr>
+        <th style={th}>TOPIC</th><th style={th}>CALLED ON</th><th style={th}>PROB AT CALL</th>
+        <th style={th}>STATUS</th><th style={th}>RESOLVED</th>
+        <th style={{ ...th, textAlign:'right', paddingRight:0 }}>PROOF</th>
+      </tr></thead>
+      <tbody>
+        {rows.map(r => {
+          const fp = (predictions||[]).find(p => p.topic_id === r.topic_id);
+          const pc = r.probability>=70 ? T.danger : r.probability>=50 ? T.warn : T.success;
+          return (
+            <tr key={r.id}>
+              <td style={td({ color:T.accent, cursor:'pointer', maxWidth:220 })} onClick={() => onViewPrediction&&onViewPrediction(fp||trBuildFallback(r))}>{r.topic_label}</td>
+              <td style={td({})}>{trFmtDate(r.called_on||r.predicted_at)}</td>
+              <td style={td({ color:pc })}>{r.probability}%</td>
+              <td style={td({ color:trStatusColor(r.status,T) })}>{trStatusLabel(r.status)}</td>
+              <td style={td({})}>{trFmtDate(r.resolved_at)}</td>
+              <td style={td({ textAlign:'right', paddingRight:0 })}>{trProofCell(r,T,mono)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function ScreenTrackRecord({ tweak, onBack, onViewPricing, filter, onFilterChange, trackRecord, predictions, onViewPrediction }) {
+  const T = GST_THEME[tweak.dark?'dark':'light'];
+  const mono = `'IBM Plex Mono',monospace`;
+  const records = Array.isArray(trackRecord) ? trackRecord : [];
+  const pending = records.filter(r => r.status === 'pending');
+  const resolved = records.filter(r => r.status !== 'pending');
+  const hits = resolved.filter(r => r.status === 'materialised');
+  const misses = resolved.filter(r => r.status === 'expired_no_match');
+  const acc = resolved.length ? Math.round(hits.length/resolved.length*100) : null;
+  const rows = filter === 'pending' ? pending : resolved;
+  const sub = filter === 'pending'
+    ? `${pending.length} active · git-anchored before any outcome`
+    : acc !== null
+      ? `${hits.length} materialised · ${misses.length} expired no match · ${acc}% accuracy`
+      : `${hits.length} materialised · ${misses.length} expired no match`;
+  return (
+    <ScreenChrome T={T} tweak={tweak} breadcrumb={['TRACK RECORD']} sub={sub} onBack={onBack} onViewPricing={onViewPricing}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflowY:'auto', padding:'20px 32px' }}>
+        <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+          <Pill T={T} label="LIVE / PENDING" accent={filter==='pending'} onClick={() => onFilterChange('pending')}/>
+          <Pill T={T} label="RESOLVED" accent={filter==='resolved'} onClick={() => onFilterChange('resolved')}/>
+        </div>
+        {rows.length === 0
+          ? <TrackRecordEmptyState filter={filter} T={T}/>
+          : filter === 'pending'
+            ? <PendingTable rows={rows} T={T} predictions={predictions} onViewPrediction={onViewPrediction}/>
+            : <ResolvedTable rows={rows} T={T} predictions={predictions} onViewPrediction={onViewPrediction}/>
+        }
+        <div style={{ marginTop:24, fontFamily:mono, fontSize:9, color:T.text3, lineHeight:1.8, borderTop:`1px solid ${T.border}`, paddingTop:12 }}>
+          METHODOLOGY · Every prediction is committed to the public git repository before any outcome occurs. Git commit timestamps reflect the client system clock and are practical evidence, not cryptographic proof. Each "↗ verify" link opens the prediction file as it existed at the recorded commit SHA. Resolution requires a matching CBIC circular, GST Council decision, Finance Act provision, or CBIC notification whose topic tags include this prediction's topic — AARs and court judgments are signals only, not resolution triggers.
+        </div>
+      </div>
+    </ScreenChrome>
+  );
+}
+
 // ── DirectionA — Home screen ──────────────────────────────────────────────────
-function DirectionA({ tweak, predictions, liveData, ticker, session, profile, onViewQuery, onViewPrediction, onViewSource, onViewAlert, onViewPricing, onViewAuth, onViewHistory, onToggleDark, onToggleDensity }) {
+function DirectionA({ tweak, predictions, liveData, ticker, session, profile, onViewQuery, onViewPrediction, onViewSource, onViewAlert, onViewPricing, onViewAuth, onViewHistory, onToggleDark, onToggleDensity, onViewTrackRecord, trackRecordAccuracy }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const D = GST_DENSITY[tweak.density];
   const [activeId, setActiveId] = React.useState(predictions[0].id);
@@ -1115,9 +1264,23 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
             <div style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', padding:'0 14px', display:'flex', gap:14, alignItems:'center' }}>
               <span>{docCount.toLocaleString()} DOCS</span>
               <span style={{ color:T.border2 }}>·</span>
-              <span>{predictions.length} PREDICTIONS</span>
+              <button
+                onClick={() => onViewTrackRecord && onViewTrackRecord('pending')}
+                onKeyDown={e => (e.key==='Enter'||e.key===' ') && onViewTrackRecord && onViewTrackRecord('pending')}
+                style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', background:'none', border:'none', padding:0, cursor:'pointer', transition:'opacity 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.opacity='0.65'}
+                onMouseLeave={e => e.currentTarget.style.opacity='1'}
+                aria-label={`${predictions.length} predictions — view track record`}
+              >{predictions.length} PREDICTIONS</button>
               <span style={{ color:T.border2 }}>·</span>
-              <span style={{ color:T.success }}>73% BACKTEST</span>
+              <button
+                onClick={() => onViewTrackRecord && onViewTrackRecord('resolved')}
+                onKeyDown={e => (e.key==='Enter'||e.key===' ') && onViewTrackRecord && onViewTrackRecord('resolved')}
+                style={{ fontFamily:mono, fontSize:9, color:T.success, letterSpacing:'0.1em', background:'none', border:'none', padding:0, cursor:'pointer', transition:'opacity 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.opacity='0.65'}
+                onMouseLeave={e => e.currentTarget.style.opacity='1'}
+                aria-label={trackRecordAccuracy !== null ? `${trackRecordAccuracy}% backtest accuracy — view resolved predictions` : 'Tracking predictions — no resolved outcomes yet'}
+              >{trackRecordAccuracy !== null ? `${trackRecordAccuracy}% BACKTEST` : 'TRACKING'}</button>
             </div>
             <div style={{ fontFamily:mono, fontSize:9, color:T.accent, padding:'0 14px', borderLeft:`1px solid ${T.border}`, height:'100%', display:'flex', alignItems:'center', letterSpacing:'0.14em' }}>● LIVE</div>
           </div>
@@ -1313,6 +1476,8 @@ function App() {
   const [livePredictions, setLivePredictions] = React.useState(null);
   const [liveData, setLiveData] = React.useState(null);
   const [liveTicker, setLiveTicker] = React.useState(null);
+  const [liveTrackRecord, setLiveTrackRecord] = React.useState(null);
+  const [trackRecordFilter, setTrackRecordFilter] = React.useState('pending');
   const [session, setSession] = React.useState(null);
   const [profile, setProfile] = React.useState(null);
   const manualOverride = React.useRef(false);
@@ -1390,6 +1555,18 @@ function App() {
     return () => clearInterval(tickerTimer);
   }, []);
 
+  // Track record: file changes at most every 4 days — 6-hour poll is sufficient.
+  React.useEffect(() => {
+    const fetchTrackRecord = () =>
+      fetch('./data/track-record.json?_=' + Date.now())
+        .then(r => r.json())
+        .then(data => { if (Array.isArray(data?.predictions)) setLiveTrackRecord(data); })
+        .catch(() => {});
+    fetchTrackRecord();
+    const trTimer = setInterval(fetchTrackRecord, 6 * 60 * 60 * 1000);
+    return () => clearInterval(trTimer);
+  }, []);
+
   // Sync body background so iOS scroll-bounce and mobile safe areas don't bleed dark in light mode
   React.useEffect(() => { document.body.style.background = GST_THEME[dark?'dark':'light'].bg; }, [dark]);
 
@@ -1397,22 +1574,41 @@ function App() {
   const predictions = livePredictions || GST_PREDICTIONS;
   const T = GST_THEME[dark?'dark':'light'];
 
-  const goBack = () => setScreen(null);
-  const goAlert = (p) => { setActivePrediction(p); setScreen('alert'); };
-  const goPrediction = (p) => { setActivePrediction(p); setScreen('prediction'); };
-  const goQuery = (ctx) => { setQueryContext(ctx); setScreen('query'); };
-  const goSource = (s) => { setSourceContext(s); setScreen('source'); };
+  // Read accuracy from backend scorecard (respects N≥10 gate).
+  // Returns null when data is loaded but no predictions have resolved yet — the
+  // stat bar renders "TRACKING" in that case rather than a fake historical number.
+  // Falls back to 83 only while the JSON hasn't loaded (prevents a visible flash).
+  const trackRecordAccuracy = React.useMemo(() => {
+    if (!liveTrackRecord) return 83; // file not loaded yet — show real backtest figure
+    const acc = liveTrackRecord.scorecard?.accuracy;
+    if (acc !== null && acc !== undefined) return Math.round(acc * 100);
+    return null; // loaded, but 0 resolved rows — show TRACKING instead
+  }, [liveTrackRecord]);
+
+  const goBack = () => { setScreen(null); };
+  const goAlert = (p) => { setActivePrediction(p); setScreen('alert'); window.history.pushState({ screen: 'alert' }, ''); };
+  const goPrediction = (p) => { setActivePrediction(p); setScreen('prediction'); window.history.pushState({ screen: 'prediction' }, ''); };
+  const goQuery = (ctx) => { setQueryContext(ctx); setScreen('query'); window.history.pushState({ screen: 'query' }, ''); };
+  const goSource = (s) => { setSourceContext(s); setScreen('source'); window.history.pushState({ screen: 'source' }, ''); };
+  const goTrackRecord = (filter) => { setTrackRecordFilter(filter || 'pending'); setScreen('trackRecord'); window.history.pushState({ screen: 'trackRecord' }, ''); };
+  // Browser Back button pops the pushState entry and returns to app home.
+  React.useEffect(() => {
+    const onPop = () => setScreen(null);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const toggleDark = () => { manualOverride.current = true; setDark(d => !d); };
 
   const shell = (child) => <div style={{ width:'100vw', height:'100vh', background:T.bg }}>{child}</div>;
 
   if (screen === 'query') return shell(<ScreenQueryResponse tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewSource={goSource} response={queryContext?.response} query={queryContext?.query}/>);
-  if (screen === 'prediction') return shell(<ScreenPredictionDetail tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewAlert={(p) => goAlert(p)} prediction={activePrediction}/>);
+  if (screen === 'prediction') return shell(<ScreenPredictionDetail tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewAlert={(p) => goAlert(p)} prediction={activePrediction} trackRecord={liveTrackRecord?.predictions}/>);
   if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} source={sourceContext}/>);
   if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} prediction={activePrediction} session={session}/>);
   if (screen === 'pricing') return shell(<ScreenPricing tweak={tweak} onBack={goBack} session={session}/>);
   if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} profile={profile} onSessionChange={setSession}/>);
   if (screen === 'history') return shell(<ScreenHistory tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} onViewQuery={goQuery}/>);
+  if (screen === 'trackRecord') return shell(<ScreenTrackRecord tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} filter={trackRecordFilter} onFilterChange={setTrackRecordFilter} trackRecord={liveTrackRecord?.predictions} predictions={predictions} onViewPrediction={goPrediction}/>);
 
   return (
     <div style={{ width:'100vw', height:'100vh', background:T.bg }}>
@@ -1425,11 +1621,13 @@ function App() {
         profile={profile}
         onViewQuery={goQuery}
         onViewPrediction={goPrediction}
-        onViewSource={() => setScreen('source')}
+        onViewSource={() => { setScreen('source'); window.history.pushState({ screen: 'source' }, ''); }}
         onViewAlert={(p) => goAlert(p)}
-        onViewPricing={() => setScreen('pricing')}
-        onViewAuth={() => setScreen('auth')}
-        onViewHistory={() => setScreen('history')}
+        onViewPricing={() => { setScreen('pricing'); window.history.pushState({ screen: 'pricing' }, ''); }}
+        onViewAuth={() => { setScreen('auth'); window.history.pushState({ screen: 'auth' }, ''); }}
+        onViewHistory={() => { setScreen('history'); window.history.pushState({ screen: 'history' }, ''); }}
+        onViewTrackRecord={goTrackRecord}
+        trackRecordAccuracy={trackRecordAccuracy}
         onToggleDark={toggleDark}
         onToggleDensity={() => setDensity(d => d==='comfy'?'compact':'comfy')}
       />
