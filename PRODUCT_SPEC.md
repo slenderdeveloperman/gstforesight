@@ -1,7 +1,7 @@
 # GST Foresight — Product Specification
-**Version**: 0.5
+**Version**: 0.6
 **Last updated**: 2026-06-29
-**Status**: Phase 1 complete; Phase 2 infrastructure complete, live validation pending; Phase 3 schema written, not yet wired; Phase 4 (Personalization) implemented — schema migration + API + frontend + backfill script ready to deploy
+**Status**: Phase 1 complete; Phase 2 infrastructure complete, live validation pending; Phase 3 schema written, not yet wired; Phase 4 (Personalization) shipped 2026-06-29; Track Record system shipped 2026-06-29 (public scorecard, Brier scoring, resolution engine, SHA256 integrity)
 
 ---
 
@@ -77,7 +77,26 @@ What to watch:
 Confidence note: Based on 847 indexed documents. Last updated: 09 May 2026.
 ```
 
-### 3.3 Topic Alerts (Phase 3 — requires auth)
+### 3.3 Track Record (live — public, no login)
+Public scorecard at `/track-record.html` that shows all live predictions alongside their resolution outcomes, scored by Brier score and binary accuracy with Wilson 95% CI.
+
+**Current state**: Shipped 2026-06-29. Resolution engine runs on 4-day CI cycle.
+
+**Key design properties**:
+- Every prediction row is anchored to a specific git commit SHA (`source_commit` + `source_committed_at`) — the SHA is recorded before any outcome is known, making post-hoc manipulation detectable
+- Multi-tag containment resolution: a CBIC circular resolves a prediction only if the prediction's `topic_id` is in the circular's `doc_tags[]` — exact match too brittle for multi-topic circulars
+- UTC-aware expiry throughout — predictions that pass their `deadline` without a resolution document become `expired_no_match`
+- Topic-level cooldown after `expired_no_match`: new pending row blocked for `horizon_days × 0.5` days to prevent gaming the system with rapid re-predictions
+- SHA256 integrity sidecar (`data/track-record.sha256`) — resolver validates sidecar on startup, rewrites on exit
+- Accuracy display suppressed until 10 resolved rows (`min_resolved_for_accuracy`) — prevents misleading 100% accuracy claims on small samples
+- Resolution document types: CBIC circulars, GST Council minutes (decision language gated), Finance Act, CBIC notifications. AARs and court judgments are signals only, not resolution triggers.
+
+**Resolution scoring**:
+- `materialised` = a qualifying resolution doc with the matching topic tag appeared before deadline
+- `expired_no_match` = deadline passed, no qualifying doc found
+- `pending` = still within horizon window
+
+### 3.4 Topic Alerts (Phase 3 — requires auth)
 Users subscribe to specific topics. When a prediction probability moves by ≥10 points, or a new signal fires, they receive an email alert.
 
 **Example alert**: *"IMS / ITC Flow Mechanism probability moved from 62% → 78%. New signal: council deferral at 54th meeting. View breakdown →"*
@@ -340,6 +359,46 @@ Tasks:
 - [ ] Developer documentation
 - [ ] Pricing page
 
+### Phase — Track Record (shipped 2026-06-29)
+**Goal**: Give CAs and external observers a cryptographically-grounded, auditable scorecard of live predictions vs. actual outcomes. Builds credibility without requiring a paid subscription.
+
+#### What was built
+
+| File | Purpose |
+|------|---------|
+| `predictors/resolve_track_record.py` | Resolution engine: register pending rows, resolve against CBIC/Council docs, expire on deadline, Brier score, Wilson CI, SHA256 integrity |
+| `data/track-record.json` (schema v2) | Migrated: full field set — `topic_id`, `predicted_at`, `source_committed_at`, `probability_at_resolution`, `resolved_at`, `outcome_doc_id`, `outcome_summary`, `days_to_resolution`, `horizon_days`; scorecard with `materialised`/`expired_no_match`/`brier_score`/`accuracy_ci_low`/`accuracy_ci_high` |
+| `data/track-record.sha256` | SHA256 sidecar — resolver validates on startup, rewrites on exit; tamper-evident |
+| `track-record.html` | Public scorecard page: 5-cell scorecard (calls / materialised / expired-miss / accuracy+CI / Brier score); accuracy suppressed until N≥10; `badge()` handles new status names + legacy |
+| `data/predictions/history/` | Append-only daily snapshots of `latest.json`; immutable once written (no-overwrite guarantee) |
+| `gst_foresight/__main__.py` | `python -m gst_foresight snapshot` (daily copy → `history/<today>.json`) and `python -m gst_foresight resolve [--force]` commands |
+| `scripts/backfill_track_record.py` | Seeds `track-record.json` from git history of `latest.json`; idempotent; `--dry-run` supported; does NOT auto-resolve (corpus not in git) |
+| `tests/test_track_record.py` | 37 tests — §9.1 registration/resolution/signal-vs-resolution; §9.2 expiry/cooldown; §9.3 snapshot; §9.4 scoring; §9.5 integrity; §9.6 datetime parsing; §integration full lifecycle |
+| `.github/workflows/ingest_daily.yml` | `snapshot` step runs daily; `resolve` step runs daily (resolver self-gates on 4-day interval); git add extended to include `history/`, `track-record.json`, `track-record.sha256` |
+
+#### Critical review decisions applied (before implementation)
+
+1. **Binary accuracy → Brier score + Wilson CI**: raw hit rate on small N is misleading — Brier penalises confident wrong predictions; Wilson CI shows uncertainty range
+2. **Git timestamp trust model softened**: methodology banner says "best-effort practical evidence" rather than cryptographic proof (clocks can be set; commit timestamps are not signed by CBIC)
+3. **Exact `topic_id` match → multi-tag containment**: `topic_id in doc_tags[]` because a CBIC circular typically covers multiple topics; exact match silently blocked many valid resolutions
+4. **Perpetual re-opening prevention**: 45-day cooldown (= `horizon_days × 0.5`) after `expired_no_match` before a new pending row can open on the same topic
+5. **Finance Act added to `RESOLUTION_SOURCE_IDS`**: budget-enacted changes (Finance Act) are the highest-authority resolution document type
+6. **Invisible probability drift captured**: `probability_at_resolution` field records the model's confidence *at resolution time*, not just at prediction time
+7. **Day-of-year scheduling replaced**: `last_resolution_run` in JSON + interval check (4 days) — resilient to missed CI days; `DAY_OF_YEAR % 4` would drift if the job skips
+8. **Small-N accuracy suppressed**: `min_resolved_for_accuracy: 10` — accuracy and CI are null until this threshold, with "Need N resolved (have X)" UI message
+9. **Rebase-broken SHAs caught**: `git cat-file -t <sha>` validation before recording `source_commit` — invalid SHAs become `null` rather than broken GitHub links
+10. **No tamper detection → SHA256 sidecar**: `data/track-record.sha256` written alongside JSON; resolver raises `RuntimeError` on mismatch at startup
+
+#### GST Council resolution gating
+GST Council minutes are resolution documents only when the minute text contains a decision keyword (`"approved"`, `"decided"`, `"resolved"`, `"ratified"`, `"recommended"`, `"notified"`, `"effective"`, `"waived"`, `"reduced"`, `"exempted"`). A plain discussion or deferral in council minutes does not count as resolution.
+
+#### Exit criteria
+- [x] 37 tests green
+- [x] SHA256 sidecar initialised and integrity-verified
+- [x] `last_resolution_run` set; CI self-gate operational
+- [x] All 12 existing prediction rows migrated to schema v2
+- [x] Pushed to `main` (commit `7ed10a9`)
+
 ---
 
 ## 10. Non-Goals (v1)
@@ -379,3 +438,7 @@ Tasks:
 | Personalization | False-continuity rate (unrelated-query eval case) | 0% — model must not reference recent context when irrelevant |
 | Personalization | Returning users (2nd+ query) seeing `personalization.applied: true` | ≥80% logged-in · ≥60% anon (session-only) |
 | Personalization | Manual read: continuity framing feels natural, not forced (sample 10 multi-turn sessions) | Pass/fail judgment call, logged in eval notes |
+| Track Record | Brier score at 20 resolved predictions | < 0.20 (random 50%-guesser baseline = 0.25) |
+| Track Record | SHA256 integrity check: no tamper detected across CI runs | 0 integrity failures |
+| Track Record | Resolver correctly skips runs within the 4-day interval | Verified by `last_resolution_run` timestamp |
+| Track Record | Resolution classification: no AARs / court judgments counted as resolution docs | Confirmed by `TestResolutionDocType` test suite |
