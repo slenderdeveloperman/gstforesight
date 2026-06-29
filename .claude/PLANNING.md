@@ -621,3 +621,88 @@ node tests/test_query_quality.js
 # Status check
 .venv/bin/python -m gst_foresight status
 ```
+
+---
+
+# Session: GST Foresight — Query Personalization (Phase 4)
+**Date:** 2026-06-29
+**Branch / Worktree:** `worktree-track-record-page` · GST FORESIGHT
+**Commits:** pending (this session)
+
+## Goal
+Design and implement query personalization via recent history — giving returning users continuity across queries without turning the system into multi-turn chat. Two user paths: server-side durable personalization for logged-in users (via `query_history`), client-side ephemeral for anonymous users (via `sessionStorage`).
+
+## Context & Background
+
+**Spec authored first**: Full design spec written before implementation and reviewed critically. Key spec decisions:
+- Logged-in path: `get_recent_topics` RPC returns last 3 queries' topic tags → soft re-rank + prompt framing
+- Anon path: client sends `recent_context` (topic tag strings from sessionStorage) → prompt framing only, no re-rank (unverified client input)
+- Cold-start seeding: first query of a tab session passes `seed_topic` from the dashboard's active prediction `topic_id`
+- Not multi-turn chat: each query is answered independently; history only nudges retrieval and frames the prompt
+
+**Critical review findings** (all fixed before implementation):
+1. `+0.03` additive similarity boost was uncalibrated — replaced with rank-based nudge (−0.5 position for matching chunks), distribution-agnostic
+2. `save_query` RPC had no ownership check — any anon caller with the public key could write to any user's history. Fixed by forwarding user JWT (not anon key) for auth-gated RPC calls, adding `auth.uid() = p_user_id` check
+3. JS port of `tagger.py` flagged as maintenance risk — accepted as necessary for edge runtime; both must be kept in sync when taxonomy changes
+4. `get_recent_topics` + `is_pro` were going to run sequentially — made parallel with `Promise.all`
+5. Anon `recent_context` wire format was ambiguous — defined as `string[]` (topic_tags strings from previous `personalization.topic_tags` responses); server wraps as `{topic_tags: str}` objects before processing
+6. Anon re-rank boost dropped entirely (prompt framing only) — unverified client input must not steer retrieval
+7. REVOKE/GRANT hardening: both `save_query` and `get_recent_topics` restricted to `authenticated` + `service_role`; anon role blocked
+
+**Research findings** (reinforced decisions):
+- Fixed additive cosine boosts are "naive RAG" as of 2025 — rank-based approach confirmed correct
+- USENIX Security 2025: 5 malicious docs in 1M corpus can manipulate RAG with >90% success — reinforces anon re-rank exclusion
+- `sessionStorage` chosen over `localStorage`: tab-scoped, auto-clears on close, no cross-session fingerprinting
+
+## Decisions Made
+
+- **`getUserIdentity` returns `{id, token}`** (was `getUserId` returning just id): user JWT forwarded for `save_query` and `get_recent_topics` so `auth.uid()` resolves correctly inside SECURITY DEFINER functions. This is the key architectural change — the old code used only the anon key for all Supabase calls.
+- **Rank-based affinity**: `rank - 0.5` for topic-matching chunks, sort by this score. Not additive cosine manipulation.
+- **Anon path: framing only**: `recent_context` and `seed_topic` go into `<recent_user_context>` prompt block only. `applyTopicAffinity` is never called on anon context.
+- **`topic_tags` always returned in response**: even when personalization isn't applied yet (first query), the server computes and returns `personalization.topic_tags` so the client can save it to sessionStorage for the next query.
+- **`save_query` DROP + CREATE**: PostgreSQL function overloading means adding a 5th param creates a new signature, not replacing the old. Must `DROP FUNCTION IF EXISTS save_query(uuid, text, text, text)` before creating the 5-param version.
+- **Backfill uses service_role key**: `scripts/backfill_query_topic_tags.py` connects with `SUPABASE_SERVICE_KEY` (not anon key) — needed to write past RLS and the new ownership check.
+
+## What Was Built / Changed
+
+| File | Change |
+|------|--------|
+| `supabase/schema.sql` | Phase 4 section appended: `topic_tags` column on `query_history`; covering index; `save_query` rebuilt with ownership check + `p_topic_tags` param (old 4-param version dropped); `get_recent_topics` RPC created; REVOKE/GRANT for both functions |
+| `api/query.js` | `getUserIdentity` returns `{id, token}`; JS topic keyword tagger (`tagQuery`); rank-based `applyTopicAffinity`; `buildRecentContextBlock`; parallel `is_pro` + `get_recent_topics`; anon path validation (`validateAnonContext`, `validateSeedTopic`); user JWT forwarded for auth-gated calls; `personalization` field in response |
+| `index.html` | `sessionStorage` helpers (`getSessionContext`, `pushSessionContext`, `isFirstSessionQuery`, `markSessionQueried`); `onAsk` sends `recent_context` + `seed_topic`; saves returned `topic_tags` to sessionStorage; personalization chip in `ScreenQueryResponse` |
+| `scripts/backfill_query_topic_tags.py` | New: one-off script to tag existing `query_history` rows; paginates 100 rows/batch with 50ms throttle |
+| `PRODUCT_SPEC.md` | Version 0.4 → 0.5; personalization success metrics added to §12; status updated |
+
+## Deployment Checklist (before going live)
+
+1. **Run Phase 4 schema migration** in Supabase SQL editor (the appended section of `schema.sql`)
+2. **Verify `save_query` drop + recreate** — check in Supabase dashboard that the old 4-param function is gone and the 5-param version exists
+3. **Run backfill**: `.venv/bin/python scripts/backfill_query_topic_tags.py` (requires `SUPABASE_SERVICE_KEY` in `.env`)
+4. **Deploy to Vercel** — `api/query.js` and `index.html` changes ship together
+5. **Test logged-in path**: sign in → submit 2 queries on related topics → verify 3rd query shows chip and different chunk ordering
+6. **Test anon path**: submit 2 queries → confirm sessionStorage has entries → 3rd query prompt block references prior topics
+7. **Test cold-start seeding**: fresh tab → click into a prediction → submit first query → verify `seed_topic` was sent and prompt framing reflects it
+
+## Open Items Carried Forward
+
+All prior open items remain. New items added this session:
+
+- [ ] **Phase H eval**: extend `tests/test_query_quality.js` with multi-turn eval scenario (A → related-B → unrelated-C). Unrelated-C must not reference prior context — false-continuity rate target: 0%
+- [ ] **JS tagger / Python tagger sync**: any taxonomy change must be applied to both `api/query.js` TOPIC_KEYWORDS and `processors/tagger.py` TOPIC_KEYWORDS. Consider a shared edge function to eliminate the duplication long-term
+- [ ] **`save_query` migration verification**: confirm old 4-param function is dropped in production (Supabase SQL editor → Functions → search `save_query`)
+
+## Key Commands
+
+```bash
+# Apply Phase 4 schema (run in Supabase SQL editor — paste the Phase 4 section)
+# Supabase dashboard → SQL Editor → paste from supabase/schema.sql PHASE 4 block
+
+# Backfill existing query_history rows with topic_tags
+cd ~/Projects/GST\ FORESIGHT && .venv/bin/python scripts/backfill_query_topic_tags.py
+
+# Deploy to Vercel preview
+vercel
+
+# Verify get_recent_topics works for a known user (run in Supabase SQL editor)
+select * from get_recent_topics('<user-uuid>'::uuid, 3);
+```

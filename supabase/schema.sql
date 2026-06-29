@@ -478,3 +478,87 @@ create policy "users manage own alerts"
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "service_role full access on alert_subscriptions"
   on alert_subscriptions for all to service_role using (true) with check (true);
+
+-- ═════════════════════════════════════════════════════════════════════════════
+-- PHASE 4 — Query Personalization
+-- Run after Phase 3 schema is applied.
+-- Adds topic_tags to query_history, new get_recent_topics RPC, and updates
+-- save_query to (a) persist topic tags and (b) enforce ownership via auth.uid().
+-- api/query.js forwards the user's JWT for save_query and get_recent_topics so
+-- auth.uid() resolves correctly inside these SECURITY DEFINER functions.
+-- ═════════════════════════════════════════════════════════════════════════════
+
+-- ── query_history: add topic_tags column ─────────────────────────────────────
+alter table query_history
+  add column if not exists topic_tags text;  -- comma-separated, same format as chunks.topic_tags
+
+-- Covering index for the hot-path: get last N topic_tags for a user without
+-- reading answer/sources columns.
+create index if not exists query_history_user_recent_idx
+  on query_history (user_id, created_at desc) include (topic_tags);
+
+-- ── save_query — updated: adds p_topic_tags, adds ownership check ─────────────
+-- Drop the old 4-param version before creating the new 5-param signature.
+-- The new version requires the caller to use their own user JWT (not anon key)
+-- so that auth.uid() resolves and the ownership check passes.
+drop function if exists save_query(uuid, text, text, text);
+
+create or replace function save_query (
+  p_user_id    uuid,
+  p_query      text,
+  p_answer     text,
+  p_sources    text,
+  p_topic_tags text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  new_id uuid;
+begin
+  -- Callers must use their own JWT. auth.uid() is set by PostgREST from the
+  -- Bearer token — this prevents any caller from writing into another user's history.
+  if auth.uid() != p_user_id then
+    raise exception 'Access denied';
+  end if;
+
+  insert into query_history (user_id, query, answer, sources, topic_tags)
+  values (p_user_id, p_query, p_answer, p_sources::jsonb, p_topic_tags)
+  returning id into new_id;
+  return new_id;
+end;
+$$;
+
+-- Restrict save_query: callable only by authenticated users and service_role.
+-- Anon callers (who only have the public anon key) are blocked.
+revoke execute on function save_query(uuid, text, text, text, text) from public;
+grant execute on function save_query(uuid, text, text, text, text) to authenticated;
+grant execute on function save_query(uuid, text, text, text, text) to service_role;
+
+-- ── get_recent_topics — new RPC ───────────────────────────────────────────────
+-- Called by api/query.js with the user's JWT to fetch the last N query topics.
+-- Returns only topic_tags + query text (not full answers) for minimal payload.
+-- Ownership enforced via auth.uid() = p_user_id — same pattern as get_history.
+
+create or replace function get_recent_topics (p_user_id uuid, p_limit int default 3)
+returns table (topic_tags text, query text, created_at timestamptz)
+language sql
+stable
+security definer
+set search_path = public, extensions
+as $$
+  select h.topic_tags, h.query, h.created_at
+  from query_history h
+  where h.user_id = p_user_id
+    and auth.uid() = p_user_id
+    and h.topic_tags is not null
+    and h.topic_tags != ''
+  order by h.created_at desc
+  limit p_limit;
+$$;
+
+-- Restrict get_recent_topics: callable only by authenticated users.
+revoke execute on function get_recent_topics(uuid, int) from public;
+grant execute on function get_recent_topics(uuid, int) to authenticated;

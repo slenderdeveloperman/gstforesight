@@ -1,7 +1,7 @@
 # GST Foresight — Product Specification
-**Version**: 0.4
-**Last updated**: 2026-06-24
-**Status**: Phase 1 complete (pending reextract + predict rebuild); Phase 2 infrastructure complete, live validation pending; Phase 3 schema written, not yet wired
+**Version**: 0.5
+**Last updated**: 2026-06-29
+**Status**: Phase 1 complete; Phase 2 infrastructure complete, live validation pending; Phase 3 schema written, not yet wired; Phase 4 (Personalization) implemented — schema migration + API + frontend + backfill script ready to deploy
 
 ---
 
@@ -376,3 +376,6 @@ Tasks:
 | Phase 3 | Free → Pro conversion rate | ≥5% |
 | Phase 3 | Monthly recurring revenue | Rs 50,000 within 90 days |
 | Phase 4 | API customers | 10 within 6 months of launch |
+| Personalization | False-continuity rate (unrelated-query eval case) | 0% — model must not reference recent context when irrelevant |
+| Personalization | Returning users (2nd+ query) seeing `personalization.applied: true` | ≥80% logged-in · ≥60% anon (session-only) |
+| Personalization | Manual read: continuity framing feels natural, not forced (sample 10 multi-turn sessions) | Pass/fail judgment call, logged in eval notes |

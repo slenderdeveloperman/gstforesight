@@ -132,6 +132,24 @@ function getQueryUsage() {
   return parseInt(localStorage.getItem(RL_KEY) || '0', 10);
 }
 function incQueryUsage() { localStorage.setItem(RL_KEY, String(getQueryUsage() + 1)); }
+
+// Anon session context — stored in sessionStorage (tab-scoped, auto-cleared on close).
+// Holds the last 3 queries' topic_tags strings returned by the server, newest first.
+// Cleared automatically when the tab closes; does not persist across sessions.
+const SS_CTX_KEY = 'gst_session_ctx';
+const SS_FIRST_KEY = 'gst_session_first';
+function getSessionContext() {
+  try { return JSON.parse(sessionStorage.getItem(SS_CTX_KEY) || '[]'); }
+  catch { return []; }
+}
+function pushSessionContext(topicTags) {
+  if (!topicTags) return;
+  const ctx = getSessionContext();
+  ctx.unshift({ topic_tags: topicTags });
+  sessionStorage.setItem(SS_CTX_KEY, JSON.stringify(ctx.slice(0, 3)));
+}
+function isFirstSessionQuery() { return !sessionStorage.getItem(SS_FIRST_KEY); }
+function markSessionQueried() { sessionStorage.setItem(SS_FIRST_KEY, '1'); }
 </script>
 
 <!-- ── React components ──────────────────────────────────────────────────── -->
@@ -332,7 +350,21 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
           <div style={{ padding:'24px 32px', overflowY:'auto', flex:1 }}>
             {liveAnswer ? (
               <>
-                <div style={{ fontFamily:serif, fontSize:17, color:T.text, lineHeight:1.65, marginBottom:22, fontWeight:300 }} dangerouslySetInnerHTML={{ __html: renderMarkdown(liveAnswer) }} />
+                <div style={{ fontFamily:serif, fontSize:17, color:T.text, lineHeight:1.65, marginBottom:14, fontWeight:300 }} dangerouslySetInnerHTML={{ __html: renderMarkdown(liveAnswer) }} />
+                {response?.personalization?.applied && response.personalization.based_on?.length > 0 && (() => {
+                  const labels = response.personalization.based_on.slice(0, 2).map(id => {
+                    const p = GST_PREDICTIONS.find(pr => pr.topic_id === id);
+                    return p ? p.topic_label.split('—')[0].trim() : id;
+                  });
+                  return (
+                    <div style={{ display:'inline-flex', alignItems:'center', gap:6, marginBottom:14,
+                      padding:'4px 10px', border:`1px solid ${T.accent2}55`,
+                      fontFamily:mono, fontSize:9, color:T.accent2, letterSpacing:'0.08em' }}>
+                      <span style={{ opacity:0.7 }}>⟳</span>
+                      <span>BASED ON YOUR INTEREST IN {labels.join(' · ').toUpperCase()}</span>
+                    </div>
+                  );
+                })()}
                 {liveSources.length > 0 && (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:12, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
                     <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', marginRight:4 }}>SOURCES</span>
@@ -998,11 +1030,32 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
     try {
       const headers = { 'Content-Type':'application/json' };
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
-      const res = await fetch('/api/query', { method:'POST', headers, body:JSON.stringify({ query:query.trim() }) });
+
+      const body = { query: query.trim() };
+      if (!session) {
+        // Anon: attach session context (prompt framing only, no re-rank server-side)
+        const ctx = getSessionContext();
+        if (ctx.length) body.recent_context = ctx.map(c => c.topic_tags);
+        // Seed from dashboard on first query of this tab session
+        if (isFirstSessionQuery() && active?.topic_id) body.seed_topic = active.topic_id;
+      }
+
+      const res = await fetch('/api/query', { method:'POST', headers, body:JSON.stringify(body) });
       const data = await res.json();
+
+      if (!data.error) {
+        markSessionQueried();
+        // Save this query's topic tags for the next anon query's recent_context
+        if (!session && data.personalization?.topic_tags) {
+          pushSessionContext(data.personalization.topic_tags);
+        }
+      }
+
       const responseObj = data.error
         ? { loading:false, errorMsg: data.message || 'An error occurred.' }
-        : { loading:false, answer:data.answer, sources: data.sources || [], remaining_queries: data.remaining_queries ?? null };
+        : { loading:false, answer:data.answer, sources: data.sources || [],
+            remaining_queries: data.remaining_queries ?? null,
+            personalization: data.personalization };
       onViewQuery && onViewQuery({ query:query.trim(), response:responseObj });
     } catch(e) {
       onViewQuery && onViewQuery({ query:query.trim(), response:{ loading:false, errorMsg:'Network error — please try again.' } });
