@@ -235,92 +235,128 @@ class GSTCouncilScraper(BaseScraper):
 
 class AARRulingScraper(BaseScraper):
     """
-    Scrapes Advance Authority Rulings from CBIC.
-    
+    Scrapes Advance Authority Rulings (AAR) and Appellate Authority Rulings (AAAR)
+    from gstcouncil.gov.in (migrated from cbic-gst.gov.in circa 2024-10).
+
     Key insight: when the same legal question gets 3+ AARs in 12 months,
     CBIC almost always issues a clarification within 6-9 months after that.
     Topic frequency is the signal, not individual rulings.
+
+    Column layout differs between the two pages; _col_map() reads the header row
+    at runtime so both parse correctly from the same code path.
     """
     source_id = "aar_rulings"
-    # CBIC retired advance-ruling.html. Candidates to try in order.
+    BASE_DOMAIN = "https://gstcouncil.gov.in"
     CANDIDATE_URLS = [
-        "https://cbic-gst.gov.in/advance-rulings-list.html",
-        "https://cbic-gst.gov.in/advance-ruling-orders.html",
-        "https://cbic-gst.gov.in/advance-ruling.html",
+        "https://gstcouncil.gov.in/authority-for-advance-ruling",   # AAR (first-level)
+        "https://gstcouncil.gov.in/appellate-orders",               # AAAR (appellate)
     ]
+
+    def _col_map(self, header_row) -> dict[str, int]:
+        """Return {field: col_index} by matching header text keywords. First match wins."""
+        mapping = {}
+        for i, th in enumerate(header_row.find_all(["th", "td"])):
+            text = th.get_text(strip=True).lower()
+            if "name" in text and "applicant" in text and "applicant" not in mapping:
+                mapping["applicant"] = i
+            elif "brief" in text and "brief" not in mapping:
+                mapping["brief"] = i
+            elif ("appeal order" in text or "order no" in text) and "order_no" not in mapping:
+                mapping["order_no"] = i
+            elif "state" in text and "state" not in mapping:
+                mapping["state"] = i
+        return mapping
 
     def scrape(self) -> list[Document]:
         docs = []
-        soup = None
-        working_url = None
         for candidate in self.CANDIDATE_URLS:
             try:
                 soup = self.fetch_html(candidate)
-                if soup.select("table tr, .ruling-item"):
-                    working_url = candidate
-                    break
+                rows = soup.select("table tr")
+                if not rows:
+                    print(f"[aar_rulings] {candidate} — no table rows", flush=True)
+                    continue
+
+                col = self._col_map(rows[0])
+                if "brief" not in col:
+                    print(
+                        f"[aar_rulings] {candidate} — could not locate 'Brief' column "
+                        f"in header {[th.get_text(strip=True) for th in rows[0].find_all(['th','td'])]}",
+                        flush=True,
+                    )
+                    continue
+
+                page_docs = []
+                for row in rows[1:]:
+                    cells = row.find_all("td")
+                    if len(cells) <= col.get("brief", 0):
+                        continue
+
+                    applicant = cells[col["applicant"]].get_text(strip=True) if "applicant" in col else ""
+                    brief = cells[col["brief"]].get_text(strip=True)
+                    order_text = cells[col["order_no"]].get_text(strip=True) if "order_no" in col else ""
+                    state = cells[col.get("state", 2)].get_text(strip=True) if len(cells) > col.get("state", 2) else ""
+
+                    if not brief or brief.lower().startswith("withdraw"):
+                        continue
+
+                    title = f"{applicant} — {brief[:120]}" if applicant else brief[:120]
+                    link = row.find("a", href=True)
+                    href = link["href"] if link else candidate
+                    full_url = href if href.startswith("http") else f"{self.BASE_DOMAIN}/{href.lstrip('/')}"
+
+                    doc_id = f"aar_{Document.content_hash(title + order_text)}"
+
+                    full_text = None
+                    if full_url.lower().endswith(".pdf"):
+                        full_text = self.fetch_pdf_text(full_url)
+                    else:
+                        pdf_url = self._find_pdf_url(full_url)
+                        if pdf_url:
+                            full_text = self.fetch_pdf_text(pdf_url)
+
+                    page_docs.append(Document(
+                        source_id=self.source_id,
+                        doc_id=doc_id,
+                        title=title,
+                        url=full_url,
+                        date=self._parse_aar_date(order_text),
+                        content=full_text or brief,
+                        metadata={
+                            "raw_date": order_text,
+                            "state": state,
+                            "source_page": candidate,
+                            "full_text_extracted": full_text is not None,
+                        },
+                    ))
+
+                print(f"[aar_rulings] {candidate} — {len(page_docs)} rulings", flush=True)
+                docs.extend(page_docs)
+
             except Exception as e:
                 print(f"[aar_rulings] {candidate} — {e}", flush=True)
 
-        if soup is None or working_url is None:
-            print(
-                "[aar_rulings] WARNING: all candidate URLs failed or returned no rows. "
-                "CBIC may have moved the advance rulings listing — update CANDIDATE_URLS.",
-                flush=True,
-            )
-            return []
-
-        try:
-            for row in soup.select("table tr, .ruling-item"):
-                cells = row.find_all("td")
-                if len(cells) < 2:
-                    continue
-
-                title = cells[0].get_text(strip=True)
-                date_text = cells[1].get_text(strip=True) if len(cells) > 1 else ""
-                link = row.find("a", href=True)
-                url = link["href"] if link else working_url
-
-                if not title:
-                    continue
-
-                doc_id = f"aar_{Document.content_hash(title + date_text)}"
-                full_url = url if url.startswith("http") else f"https://cbic-gst.gov.in/{url.lstrip('/')}"
-
-                full_text = None
-                if full_url.lower().endswith(".pdf"):
-                    full_text = self.fetch_pdf_text(full_url)
-                else:
-                    pdf_url = self._find_pdf_url(full_url)
-                    if pdf_url:
-                        full_text = self.fetch_pdf_text(pdf_url)
-
-                docs.append(Document(
-                    source_id=self.source_id,
-                    doc_id=doc_id,
-                    title=title,
-                    url=full_url,
-                    date=self._parse_aar_date(date_text),
-                    content=full_text or title,
-                    metadata={
-                        "raw_date": date_text,
-                        "full_text_extracted": full_text is not None,
-                    },
-                ))
-        except Exception as e:
-            print(f"[aar_rulings] parse error: {e}", flush=True)
-
         if not docs:
             print(
-                f"[aar_rulings] WARNING: fetched {working_url} but parsed 0 rulings — "
-                "page structure may have changed, update selectors.",
+                "[aar_rulings] WARNING: all candidate URLs returned no rulings. "
+                "gstcouncil.gov.in may have restructured — update CANDIDATE_URLS.",
                 flush=True,
             )
         return docs
 
     def _parse_aar_date(self, text: str) -> datetime | None:
-        """Parse date strings from CBIC AAR listing tables."""
+        """
+        Parse dates from order number strings like:
+          'ADVANCE RULING NO. GUJ/GAAR/R/2026/21, dated 29.05.2026'
+          'GUJ/GAAAR/APPEAL/2026/02/dated 01.04.2026'
+          'HAAAR/2023-24/05 Date:22.05.2026'
+        Falls back to bare date strings and year-only extraction.
+        """
         text = text.strip()
+        # Extract date fragment after 'dated', 'date:', 'dt.'
+        m = re.search(r'(?:dated?|dt\.)\s*[:\s]?\s*(\d{1,2}[./\-]\d{1,2}[./\-]\d{4})', text, re.I)
+        if m:
+            text = m.group(1)
         for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y",
                     "%d %b %Y", "%d %B %Y", "%d %b, %Y", "%d %B, %Y"):
             try:
