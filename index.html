@@ -1587,7 +1587,19 @@ function App() {
   const goPrediction = (p) => { setActivePrediction(p); setScreen('prediction'); };
   const goQuery = (ctx) => { setQueryContext(ctx); setScreen('query'); };
   const goSource = (s) => { setSourceContext(s); setScreen('source'); };
-  const goTrackRecord = (filter) => { setTrackRecordFilter(filter || 'pending'); setScreen('trackRecord'); };
+  const goTrackRecord = (filter) => {
+    setTrackRecordFilter(filter || 'pending');
+    setScreen('trackRecord');
+    // Push a history entry so the browser Back button returns to the app home
+    // rather than exiting to whatever page the user came from.
+    window.history.pushState({ screen: 'trackRecord' }, '');
+  };
+  // Intercept browser Back button while on the track record screen.
+  React.useEffect(() => {
+    const onPop = () => setScreen(null);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const toggleDark = () => { manualOverride.current = true; setDark(d => !d); };
 
   const shell = (child) => <div style={{ width:'100vw', height:'100vh', background:T.bg }}>{child}</div>;
