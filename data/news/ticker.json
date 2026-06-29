@@ -1,25 +1,46 @@
 {
-  "generated_at": "2026-06-29T07:50:07.812776+00:00",
+  "generated_at": "2026-06-29T09:11:14.144625+00:00",
   "items": [
     {
-      "time": "6D",
-      "text": "Ministry of FinanceUnion Minister for Finance and Corporate Affairs delivers keynote address at 38th",
+      "time": "14:29 IST",
+      "text": "Ministry of FinanceUnion Minister for Finance and Corporate Affairs Minister calls for stronger text",
       "source": "PIB FINANCE",
-      "doc_id": "pib_2255490",
+      "doc_id": "pib_2265050",
+      "url": ""
+    },
+    {
+      "time": "14:12 IST",
+      "text": "Special Service and FeaturesUnion Finance Minister Smt. Nirmala Sitharman Inaugurates Renovated Old",
+      "source": "PIB FINANCE",
+      "doc_id": "pib_2278050",
+      "url": ""
+    },
+    {
+      "time": "13:46 IST",
+      "text": "Clarifications regarding applicability of GST on certain services – reg.",
+      "source": "CBIC CIRC",
+      "doc_id": "cbic_circ_pdf_circular_55thgstc_services_pdf",
       "url": ""
     },
     {
       "time": "6D",
-      "text": "E-Newsletter on GST – Sixty-sixth Edition",
-      "source": "ICAI",
-      "doc_id": "icai_idtc_home_163c7e19ca64",
+      "text": "Primarc Projects Realty Private ... vs Additional Director on 23 June, 2026",
+      "source": "HC/SC",
+      "doc_id": "judgment_b39ee0ef8b7b",
       "url": ""
     },
     {
-      "time": "6D",
-      "text": "Webinar on GST Helpdesk : Navigating Departmental Audit",
-      "source": "ICAI",
-      "doc_id": "icai_idtc_home_58d6d654bfdd",
+      "time": "7D",
+      "text": "M/S. Baba Contractors And Engineers vs Union Of India on 22 June, 2026",
+      "source": "HC/SC",
+      "doc_id": "judgment_a98a3a23ff01",
+      "url": ""
+    },
+    {
+      "time": "19 JUN",
+      "text": "Tvl Sri Balaji Traders vs The State Tax Officer, on 19 June, 2026",
+      "source": "HC/SC",
+      "doc_id": "judgment_5cf501e4c49a",
       "url": ""
     },
     {
@@ -31,37 +52,16 @@
     },
     {
       "time": "11 JUN",
+      "text": "Ponni And Co, vs The Appellate Deputy Commissioner ... on 11 June, 2026",
+      "source": "HC/SC",
+      "doc_id": "judgment_5b736e482a74",
+      "url": ""
+    },
+    {
+      "time": "11 JUN",
       "text": "Oswal, vs The Superitendent Of Gst And Central ... on 11 June, 2026",
       "source": "HC/SC",
       "doc_id": "judgment_940593b2a1cd",
-      "url": ""
-    },
-    {
-      "time": "10 JUN",
-      "text": "Tvl Melvin Traders vs The Commissioner Of Commercial Taxes on 10 June, 2026",
-      "source": "HC/SC",
-      "doc_id": "judgment_c879c1afc73a",
-      "url": ""
-    },
-    {
-      "time": "10 JUN",
-      "text": "The Principal Commissioner Of Central ... vs T H Manavallaiah on 10 June, 2026",
-      "source": "HC/SC",
-      "doc_id": "judgment_1b1daa5a96a5",
-      "url": ""
-    },
-    {
-      "time": "10 JUN",
-      "text": "The Commissioner Of CentralTaxvs C A Ramu on 10 June, 2026",
-      "source": "HC/SC",
-      "doc_id": "judgment_91b36e8d205c",
-      "url": ""
-    },
-    {
-      "time": "10 JUN",
-      "text": "Principal Commissioner vs Sri.T. Vasudev on 10 June, 2026",
-      "source": "HC/SC",
-      "doc_id": "judgment_afdfed529adf",
       "url": ""
     },
     {
@@ -87,48 +87,6 @@
     },
     {
       "time": "22 MAY",
-      "text": "E-Newsletter on GST – Sixty-fifth Edition",
-      "source": "ICAI",
-      "doc_id": "icai_idtc_home_d11a4526eb37",
-      "url": ""
-    },
-    {
-      "time": "22 MAY",
-      "text": "Webinar on GST Implications in FMCG Sector",
-      "source": "ICAI",
-      "doc_id": "icai_idtc_home_8aac0b96352a",
-      "url": ""
-    },
-    {
-      "time": "22 MAY",
-      "text": "Representation for clarifying that Input Tax Credit should not be denied to buyer for mistake of seller",
-      "source": "ICAI",
-      "doc_id": "icai_budget_memo_d3417fadfa3e",
-      "url": ""
-    },
-    {
-      "time": "22 MAY",
-      "text": "ICAI submit suggestions on GST law on construction & refund etc. 27.03.18",
-      "source": "ICAI",
-      "doc_id": "icai_budget_memo_33b970f98f20",
-      "url": ""
-    },
-    {
-      "time": "22 MAY",
-      "text": "Suggestions on GST draft proposed return formats",
-      "source": "ICAI",
-      "doc_id": "icai_budget_memo_c704749dfed5",
-      "url": ""
-    },
-    {
-      "time": "22 MAY",
-      "text": "\"Draft additional Suggestions”",
-      "source": "ICAI",
-      "doc_id": "icai_budget_memo_b0f63e036497",
-      "url": ""
-    },
-    {
-      "time": "22 MAY",
       "text": "M/s RHI Magnesita India Limited — Whether the Applicant is entitled to avail credit on the services received for underta…",
       "source": "AAR",
       "doc_id": "aar_e353f5a9e90b",
@@ -136,9 +94,30 @@
     },
     {
       "time": "20 MAY",
+      "text": "M/s Onetake media com Pvt Ltd. — Whether applicant have to Charge 12% Instead of 18% which applicant usually Charge or w…",
+      "source": "AAR",
+      "doc_id": "aar_30968806d797",
+      "url": ""
+    },
+    {
+      "time": "20 MAY",
+      "text": "M/s Rohan Energy Solutions Pvt Ltd. — 1. What GST rate is applicable for the product Diesel Exhaust Fluid (DEF)?2. What …",
+      "source": "AAR",
+      "doc_id": "aar_93ed7d9d6848",
+      "url": ""
+    },
+    {
+      "time": "20 MAY",
       "text": "M/s Sahrudaya Healthcare Pvt Ltd. — Whether medicines, consumables, implants and other allied items supplied by hospital…",
       "source": "AAR",
       "doc_id": "aar_305a993e00be",
+      "url": ""
+    },
+    {
+      "time": "20 MAY",
+      "text": "M/s Pentacle Consultants (I) Pvt Ltd. — 1. Applicability of Notification No. 16/2021 Central Tax (Rate) to MCGM for with…",
+      "source": "AAR",
+      "doc_id": "aar_3fbecafda99e",
       "url": ""
     },
     {
@@ -156,69 +135,6 @@
       "url": ""
     },
     {
-      "time": "20 MAY",
-      "text": "M/s Maharashtra State Mining Corporation Limited — Q.1 Which rates of GST should be applied in the invoice raised for de…",
-      "source": "AAR",
-      "doc_id": "aar_f09cc5e88fc7",
-      "url": ""
-    },
-    {
-      "time": "20 MAY",
-      "text": "M/s Pentacle Consultants (I) Pvt Ltd. — 1. Applicability of Notification No. 16/2021 Central Tax (Rate) to MCGM for with…",
-      "source": "AAR",
-      "doc_id": "aar_3fbecafda99e",
-      "url": ""
-    },
-    {
-      "time": "20 MAY",
-      "text": "M/s Rohan Energy Solutions Pvt Ltd. — 1. What GST rate is applicable for the product Diesel Exhaust Fluid (DEF)?2. What …",
-      "source": "AAR",
-      "doc_id": "aar_93ed7d9d6848",
-      "url": ""
-    },
-    {
-      "time": "14 MAY",
-      "text": "Ministry of FinanceAwareness Programme on New Income Tax Bill, 2025 Organised in Shillong under “Prarambh 2026”AI-powere…",
-      "source": "PIB FINANCE",
-      "doc_id": "pib_2261174",
-      "url": ""
-    },
-    {
-      "time": "14 MAY",
-      "text": "PIB BackgrounderEmpowering the Grassroots Economy: A Comprehensive Push for Rural and Semi-Urban MSMEs",
-      "source": "PIB FINANCE",
-      "doc_id": "pib_2260904",
-      "url": ""
-    },
-    {
-      "time": "10 MAY",
-      "text": "Circular 244/01/2025-GST — Regularizing payment of GST on co-insurance premium apportioned by the lead insurer to the co…",
-      "source": "CBIC CIRC",
-      "doc_id": "cbic_circ_r_services_co_insurance_re_insurance_pdf",
-      "url": ""
-    },
-    {
-      "time": "10 MAY",
-      "text": "Clarifications regarding applicability of GST on certain services – reg.",
-      "source": "CBIC CIRC",
-      "doc_id": "cbic_circ_pdf_circular_55thgstc_services_pdf",
-      "url": ""
-    },
-    {
-      "time": "10 MAY",
-      "text": "Clarification regarding GST rates & classification (goods) based on the recommendations of the GS",
-      "source": "CBIC CIRC",
-      "doc_id": "cbic_circ_pdf_gst_circular_pdf",
-      "url": ""
-    },
-    {
-      "time": "7 MAY",
-      "text": "Ministry of FinanceOutreach Event on the New Income Tax Act, 2025 held under “PRARAMBH 2026” in Guwahati",
-      "source": "PIB FINANCE",
-      "doc_id": "pib_2258734",
-      "url": ""
-    },
-    {
       "time": "24 JUN",
       "text": "Circular 250/07/2025-GST — CBIC Circular 250: Reviewing authority, Revisional Authority and Appellate Authority in respe…",
       "source": "CBIC CIRC",
@@ -230,6 +146,13 @@
       "text": "Union Budget Speech 2025",
       "source": "BUDGET",
       "doc_id": "budget_speech_2025",
+      "url": ""
+    },
+    {
+      "time": "1 JAN",
+      "text": "Circular 244/01/2025-GST — Regularizing payment of GST on co-insurance premium apportioned by the lead insurer to the co…",
+      "source": "CBIC CIRC",
+      "doc_id": "cbic_circ_r_services_co_insurance_re_insurance_pdf",
       "url": ""
     },
     {
@@ -279,6 +202,83 @@
       "text": "GST Council Meeting 51 Minutes (02-Aug-2023, Video Conference)",
       "source": "COUNCIL",
       "doc_id": "gst_council_51",
+      "url": ""
+    },
+    {
+      "time": "11 JUL",
+      "text": "GST Council Meeting 50 Minutes (11-Jul-2023, New Delhi)",
+      "source": "COUNCIL",
+      "doc_id": "gst_council_50",
+      "url": ""
+    },
+    {
+      "time": "18 FEB",
+      "text": "GST Council Meeting 49 Minutes (18-Feb-2023, New Delhi)",
+      "source": "COUNCIL",
+      "doc_id": "gst_council_49",
+      "url": ""
+    },
+    {
+      "time": "1 FEB",
+      "text": "Union Budget Speech 2023",
+      "source": "BUDGET",
+      "doc_id": "budget_speech_2023",
+      "url": ""
+    },
+    {
+      "time": "17 DEC",
+      "text": "GST Council Meeting 48 Minutes (17-Dec-2022, Video Conference)",
+      "source": "COUNCIL",
+      "doc_id": "gst_council_48",
+      "url": ""
+    },
+    {
+      "time": "1 FEB",
+      "text": "Union Budget Speech 2022",
+      "source": "BUDGET",
+      "doc_id": "budget_speech_2022",
+      "url": ""
+    },
+    {
+      "time": "1 FEB",
+      "text": "Union Budget Speech 2021",
+      "source": "BUDGET",
+      "doc_id": "budget_speech_2021",
+      "url": ""
+    },
+    {
+      "time": "1 FEB",
+      "text": "Union Budget Speech 2020",
+      "source": "BUDGET",
+      "doc_id": "budget_speech_2020",
+      "url": ""
+    },
+    {
+      "time": "5 NOV",
+      "text": "Circular 249/06/2025-GST — CBIC Circular 249: Generation and quoting of Document Identification Number(DIN) on any commu…",
+      "source": "CBIC CIRC",
+      "doc_id": "cbic_circ_pdf_circular_no_249_2025_pdf",
+      "url": ""
+    },
+    {
+      "time": "1 FEB",
+      "text": "Union Budget Speech 2019",
+      "source": "BUDGET",
+      "doc_id": "budget_speech_2019",
+      "url": ""
+    },
+    {
+      "time": "1 FEB",
+      "text": "Union Budget Speech 2018",
+      "source": "BUDGET",
+      "doc_id": "budget_speech_2018",
+      "url": ""
+    },
+    {
+      "time": "28 JUN",
+      "text": "Circular 247/04/2025-GST — Clarification regarding GST rates & classification (goods) based on the recommendations of th…",
+      "source": "CBIC CIRC",
+      "doc_id": "cbic_circ_pdf_gst_circular_pdf",
       "url": ""
     }
   ]
