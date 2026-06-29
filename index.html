@@ -1279,8 +1279,8 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
                 style={{ fontFamily:mono, fontSize:9, color:T.success, letterSpacing:'0.1em', background:'none', border:'none', padding:0, cursor:'pointer', transition:'opacity 0.15s' }}
                 onMouseEnter={e => e.currentTarget.style.opacity='0.65'}
                 onMouseLeave={e => e.currentTarget.style.opacity='1'}
-                aria-label={`${trackRecordAccuracy}% backtest accuracy — view resolved predictions`}
-              >{trackRecordAccuracy}% BACKTEST</button>
+                aria-label={trackRecordAccuracy !== null ? `${trackRecordAccuracy}% backtest accuracy — view resolved predictions` : 'Tracking predictions — no resolved outcomes yet'}
+              >{trackRecordAccuracy !== null ? `${trackRecordAccuracy}% BACKTEST` : 'TRACKING'}</button>
             </div>
             <div style={{ fontFamily:mono, fontSize:9, color:T.accent, padding:'0 14px', borderLeft:`1px solid ${T.border}`, height:'100%', display:'flex', alignItems:'center', letterSpacing:'0.14em' }}>● LIVE</div>
           </div>
@@ -1574,12 +1574,15 @@ function App() {
   const predictions = livePredictions || GST_PREDICTIONS;
   const T = GST_THEME[dark?'dark':'light'];
 
-  // Read accuracy directly from backend scorecard — respects the N≥10 gate.
-  // Falls back to 73 (current hardcoded value) while track-record.json has no resolved rows.
+  // Read accuracy from backend scorecard (respects N≥10 gate).
+  // Returns null when data is loaded but no predictions have resolved yet — the
+  // stat bar renders "TRACKING" in that case rather than a fake historical number.
+  // Falls back to 73 only while the JSON hasn't loaded (prevents a visible flash).
   const trackRecordAccuracy = React.useMemo(() => {
-    const acc = liveTrackRecord?.scorecard?.accuracy;
+    if (!liveTrackRecord) return 73; // file not loaded yet — keep old placeholder
+    const acc = liveTrackRecord.scorecard?.accuracy;
     if (acc !== null && acc !== undefined) return Math.round(acc * 100);
-    return 73;
+    return null; // loaded, but 0 resolved rows — show TRACKING instead
   }, [liveTrackRecord]);
 
   const goBack = () => { setScreen(null); };
