@@ -129,7 +129,7 @@
   /* ── Scoreboard ── */
   .scorecard {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1px;
     background: var(--border);
     border: 1px solid var(--border);
@@ -451,9 +451,10 @@
   <div class="method-banner">
     <div class="method-icon">⊕</div>
     <div class="method-text">
-      <strong>How to verify independently:</strong> The GST Foresight predictions file is committed to a public git repository once per day.
-      Git's content-addressed SHA makes timestamps tamper-proof — any observer can clone the repo and confirm the exact predictions that were live on any given date.
-      Each row below links to the specific commit where that prediction was first logged.
+      <strong>How to verify independently:</strong> The GST Foresight predictions file is committed to a public git repository every day.
+      Each row below links to the specific commit where that prediction was first logged — anyone can clone the repo and inspect the exact predictions that were live on any given date.
+      GitHub's push timestamps and commit metadata provide a practical, independently-observable record of when each call was made.
+      <em>Note: git commit timestamps reflect the client's system clock and are not cryptographic proofs. The commit SHAs and the public repository's push history together provide the evidentiary basis.</em>
       <br/>
       <code class="method-cmd">git log --follow data/predictions/latest.json</code>
     </div>
@@ -509,7 +510,37 @@ function daysUntil(iso) {
 }
 
 function renderScorecard(sc) {
-  const hitRate = sc.resolved > 0 ? Math.round((sc.hits / sc.resolved) * 100) + '%' : null;
+  // Accuracy: suppressed until MIN_RESOLVED_FOR_ACCURACY rows resolved.
+  // sc.accuracy is null from the resolver when N is too small.
+  const minN = sc.min_resolved_for_accuracy || 10;
+  let accuracyHtml;
+  if (sc.accuracy !== null && sc.accuracy !== undefined) {
+    const pct = Math.round(sc.accuracy * 100) + '%';
+    const ciLow  = sc.accuracy_ci_low  !== null ? Math.round(sc.accuracy_ci_low  * 100) : null;
+    const ciHigh = sc.accuracy_ci_high !== null ? Math.round(sc.accuracy_ci_high * 100) : null;
+    const ciStr = (ciLow !== null && ciHigh !== null)
+      ? `<div class="score-note" style="font-size:8.5px;margin-top:3px;">95% CI: ${ciLow}%–${ciHigh}%</div>`
+      : '';
+    accuracyHtml = `<div class="score-value acc">${pct}</div>${ciStr}
+      <div class="score-note">${sc.resolved} resolved</div>`;
+  } else {
+    accuracyHtml = `<div class="score-value null">—</div>
+      <div class="score-note">Need ${minN} resolved (have ${sc.resolved})</div>`;
+  }
+
+  // Brier score: lower = better; null when no resolved rows yet.
+  // 0.25 = random 50% guesser baseline.
+  let brierHtml;
+  if (sc.brier_score !== null && sc.brier_score !== undefined) {
+    const vs025 = sc.brier_score < 0.25 ? '↓ vs 0.25 baseline' : '↑ above baseline';
+    brierHtml = `<div class="score-value" style="font-size:24px;">${sc.brier_score.toFixed(3)}</div>
+      <div class="score-note">Brier score · lower = better</div>
+      <div class="score-note" style="font-size:8px;margin-top:2px;">${vs025}</div>`;
+  } else {
+    brierHtml = `<div class="score-value null">—</div>
+      <div class="score-note">Brier score (no resolved rows yet)</div>`;
+  }
+
   document.getElementById('scorecard').innerHTML = `
     <div class="score-cell">
       <div class="score-label">Predictions called</div>
@@ -517,26 +548,30 @@ function renderScorecard(sc) {
       <div class="score-note">Since 14 May 2026</div>
     </div>
     <div class="score-cell">
-      <div class="score-label">Correct</div>
-      <div class="score-value hit">${sc.hits}</div>
+      <div class="score-label">Materialised</div>
+      <div class="score-value hit">${sc.materialised ?? sc.hits ?? 0}</div>
       <div class="score-note">Outcome matched within horizon</div>
     </div>
     <div class="score-cell">
-      <div class="score-label">Incorrect</div>
-      <div class="score-value miss">${sc.misses}</div>
-      <div class="score-note">Window expired, no action</div>
+      <div class="score-label">Expired (miss)</div>
+      <div class="score-value miss">${sc.expired_no_match ?? sc.misses ?? 0}</div>
+      <div class="score-note">Window closed, no action</div>
     </div>
     <div class="score-cell">
       <div class="score-label">Accuracy</div>
-      <div class="score-value acc ${hitRate ? '' : 'null'}">${hitRate || '—'}</div>
-      <div class="score-note">${sc.resolved} resolved · ${sc.pending} tracking</div>
+      ${accuracyHtml}
+    </div>
+    <div class="score-cell">
+      ${brierHtml}
     </div>
   `;
 }
 
 function badge(status) {
-  if (status === 'hit')      return `<span class="badge badge-hit"><span class="badge-dot"></span>Hit</span>`;
-  if (status === 'miss')     return `<span class="badge badge-miss"><span class="badge-dot"></span>Miss</span>`;
+  if (status === 'materialised' || status === 'hit')
+    return `<span class="badge badge-hit"><span class="badge-dot"></span>Materialised</span>`;
+  if (status === 'expired_no_match' || status === 'miss')
+    return `<span class="badge badge-miss"><span class="badge-dot"></span>Expired (miss)</span>`;
   return `<span class="badge badge-tracking"><span class="badge-dot"></span>Tracking</span>`;
 }
 
@@ -609,8 +644,8 @@ async function init() {
 
     renderScorecard(data.scorecard);
 
-    const resolved = data.predictions.filter(p => p.status !== 'tracking');
-    const tracking = data.predictions.filter(p => p.status === 'tracking');
+    const resolved = data.predictions.filter(p => p.status === 'materialised' || p.status === 'expired_no_match' || p.status === 'hit' || p.status === 'miss');
+    const tracking = data.predictions.filter(p => p.status === 'pending' || p.status === 'tracking');
 
     let html = '';
     if (resolved.length) {

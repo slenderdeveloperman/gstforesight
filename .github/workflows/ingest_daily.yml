@@ -67,14 +67,24 @@ jobs:
       - name: Generate predictions
         run: python3 -m gst_foresight predict
 
+      - name: Snapshot predictions (append-only history)
+        run: python3 -m gst_foresight snapshot
+
+      - name: Resolve track record (every 4 days, interval-based)
+        run: python3 -m gst_foresight resolve
+
       - name: Refresh news ticker
         run: python3 scripts/scrape_ticker.py
 
-      - name: Commit updated predictions + ticker
+      - name: Commit updated predictions + ticker + track record
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/predictions/latest.json data/news/ticker.json
+          git add data/predictions/latest.json \
+                  data/news/ticker.json \
+                  data/predictions/history/ \
+                  data/track-record.json \
+                  data/track-record.sha256
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
