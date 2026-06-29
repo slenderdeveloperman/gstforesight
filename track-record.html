@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Track Record — GST Foresight</title>
+<meta name="description" content="Every GST Foresight prediction is committed to a public git repository before any outcome occurs. This page compares each prediction against what actually happened."/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500&family=Playfair+Display:ital,wght@0,700;1,500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0a08;
+    --bg2:      #111110;
+    --bg3:      #1a1a16;
+    --border:   #2a2a25;
+    --border2:  #3a3a32;
+    --text:     #e8e4d8;
+    --text2:    #b0aa96;
+    --text3:    #6a6555;
+    --accent:   #c9a84c;
+    --accent2:  #a07830;
+    --hit:      #4caf7a;
+    --miss:     #e05a4a;
+    --track:    #5a7ab0;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', system-ui, sans-serif;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Layout ── */
+  .page { max-width: 960px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+  .topbar-brand a { color: var(--text3); }
+  .topbar-brand a:hover { color: var(--accent); text-decoration: none; }
+  .topbar-sep { color: var(--text3); opacity: 0.4; }
+  .topbar-page {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--text2);
+    text-transform: uppercase;
+  }
+  .github-link {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .github-link:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+  /* ── Hero ── */
+  .hero { margin-bottom: 48px; }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+  }
+  .hero-title {
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .hero-sub {
+    font-size: 13.5px;
+    color: var(--text2);
+    max-width: 600px;
+    line-height: 1.7;
+  }
+
+  /* ── Scoreboard ── */
+  .scorecard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .score-cell {
+    background: var(--bg2);
+    padding: 20px 20px 18px;
+  }
+  .score-label {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .score-value {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .score-value.hit   { color: var(--hit); }
+  .score-value.miss  { color: var(--miss); }
+  .score-value.acc   { color: var(--accent); }
+  .score-value.null  { color: var(--text3); font-size: 20px; padding-top: 7px; }
+  .score-note {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Methodology banner ── */
+  .method-banner {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 14px 16px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .method-icon {
+    font-family: var(--mono);
+    font-size: 18px;
+    line-height: 1;
+    color: var(--accent);
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .method-text {
+    font-size: 12.5px;
+    color: var(--text2);
+    line-height: 1.65;
+  }
+  .method-text strong { color: var(--text); font-weight: 500; }
+  .method-cmd {
+    display: inline-block;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--accent);
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-top: 6px;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+  .section-count {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+  }
+
+  /* ── Prediction table ── */
+  .pred-table { width: 100%; border-collapse: collapse; }
+  .pred-table thead tr {
+    border-bottom: 1px solid var(--border);
+  }
+  .pred-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: var(--text3);
+    text-transform: uppercase;
+    text-align: left;
+    padding: 0 12px 10px 0;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  .pred-table th:last-child { text-align: right; padding-right: 0; }
+
+  .pred-row { border-bottom: 1px solid var(--border); }
+  .pred-row:last-child { border-bottom: none; }
+  .pred-row td { padding: 14px 12px 14px 0; vertical-align: top; }
+  .pred-row td:last-child { padding-right: 0; text-align: right; }
+
+  .pred-topic { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 3px; }
+  .pred-signal { font-size: 11px; color: var(--text3); line-height: 1.5; max-width: 280px; }
+
+  .pred-date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  .pred-date-sub {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--text3);
+    margin-top: 3px;
+    white-space: nowrap;
+  }
+
+  .pred-prob {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .pred-prob-unit {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 400;
+  }
+  .pred-horizon {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--text3);
+    margin-top: 3px;
+  }
+
+  .pred-outcome-pending {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    max-width: 180px;
+    line-height: 1.5;
+  }
+  .pred-outcome-deadline {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    margin-top: 4px;
+    opacity: 0.7;
+  }
+
+  .pred-outcome-text { font-size: 12px; color: var(--text2); max-width: 200px; line-height: 1.5; }
+  .pred-outcome-date { font-family: var(--mono); font-size: 9.5px; color: var(--text3); margin-top: 4px; }
+  .pred-outcome-source { font-family: var(--mono); font-size: 9px; color: var(--accent); margin-top: 2px; }
+
+  /* ── Status badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .badge-tracking {
+    background: rgba(90, 122, 176, 0.12);
+    color: var(--track);
+    border: 1px solid rgba(90, 122, 176, 0.25);
+  }
+  .badge-hit {
+    background: rgba(76, 175, 122, 0.12);
+    color: var(--hit);
+    border: 1px solid rgba(76, 175, 122, 0.25);
+  }
+  .badge-miss {
+    background: rgba(224, 90, 74, 0.12);
+    color: var(--miss);
+    border: 1px solid rgba(224, 90, 74, 0.25);
+  }
+  .badge-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .badge-tracking .badge-dot { animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── Git proof link ── */
+  .git-proof {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid var(--border);
+    padding: 3px 7px;
+    border-radius: 2px;
+    transition: border-color 0.15s, color 0.15s;
+    text-decoration: none;
+    margin-top: 6px;
+  }
+  .git-proof:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+  .git-proof-hash { font-size: 8.5px; opacity: 0.7; }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 24px;
+  }
+  .footer-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .footer-text { font-size: 12px; color: var(--text3); line-height: 1.7; }
+  .footer-copy {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── Loading ── */
+  .loading {
+    text-align: center;
+    padding: 80px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.14em;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 680px) {
+    .scorecard { grid-template-columns: repeat(2, 1fr); }
+    .footer-grid { grid-template-columns: 1fr; }
+    .pred-signal { display: none; }
+    .pred-table th.hide-mobile,
+    .pred-table td.hide-mobile { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand"><a href="/">GST Foresight</a></span>
+      <span class="topbar-sep">›</span>
+      <span class="topbar-page">Track Record</span>
+    </div>
+    <a class="github-link" href="https://github.com/slenderdeveloperman/gstforesight" target="_blank" rel="noopener">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.01 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.82 1.1.82 2.22v3.29c0 .32.21.7.83.58A12 12 0 0 0 24 12C24 5.37 18.63 0 12 0z"/>
+      </svg>
+      View on GitHub
+    </a>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow">Prediction Accountability</div>
+    <h1 class="hero-title">Every call is on the record —<br>before the outcome.</h1>
+    <p class="hero-sub">
+      GST Foresight generates predictions from the live regulatory corpus and commits them to a public repository.
+      The git timestamp is immutable: any prediction on this page can be independently verified as having been made before the event it describes.
+    </p>
+  </div>
+
+  <!-- Scorecard -->
+  <div class="scorecard" id="scorecard">
+    <div class="loading" style="grid-column:1/-1;padding:24px;">Loading...</div>
+  </div>
+
+  <!-- Methodology banner -->
+  <div class="method-banner">
+    <div class="method-icon">⊕</div>
+    <div class="method-text">
+      <strong>How to verify independently:</strong> The GST Foresight predictions file is committed to a public git repository once per day.
+      Git's content-addressed SHA makes timestamps tamper-proof — any observer can clone the repo and confirm the exact predictions that were live on any given date.
+      Each row below links to the specific commit where that prediction was first logged.
+      <br/>
+      <code class="method-cmd">git log --follow data/predictions/latest.json</code>
+    </div>
+  </div>
+
+  <!-- Predictions -->
+  <div id="predictions-section">
+    <div class="loading">Loading predictions…</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-label">Methodology</div>
+        <div class="footer-text">
+          Predictions are generated by a multi-signal probabilistic engine that reads from the full CBIC circular corpus,
+          GST Council minutes, ICAI representations, budget speeches, and High Court / Supreme Court judgments.
+          Signals include: deferred agenda items, multi-forum judicial splits, ICAI representation frequency,
+          and budget speech action language. Each signal is weighted and combined into a single probability estimate.
+        </div>
+      </div>
+      <div>
+        <div class="footer-label">Outcome verification</div>
+        <div class="footer-text">
+          Outcomes are manually verified against official CBIC circulars, GST Council press releases, and PIB notifications.
+          A prediction is scored as a "hit" if the event occurred within the stated horizon window.
+          A "miss" is recorded if the window expired with no corresponding regulatory action.
+          Partial outcomes (advisory committee recommendation without final circular) are not scored until complete.
+        </div>
+      </div>
+    </div>
+    <div class="footer-copy">
+      <span>GST Foresight — Regulatory Intelligence</span>
+      <span><a href="/">← Back to main app</a></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const GITHUB = 'https://github.com/slenderdeveloperman/gstforesight/commit/';
+
+function formatDate(iso) {
+  const d = new Date(iso + 'T00:00:00Z');
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', timeZone:'UTC' });
+}
+
+function daysUntil(iso) {
+  const now = new Date();
+  const d = new Date(iso + 'T00:00:00Z');
+  return Math.ceil((d - now) / 86400000);
+}
+
+function renderScorecard(sc) {
+  const hitRate = sc.resolved > 0 ? Math.round((sc.hits / sc.resolved) * 100) + '%' : null;
+  document.getElementById('scorecard').innerHTML = `
+    <div class="score-cell">
+      <div class="score-label">Predictions called</div>
+      <div class="score-value">${sc.total}</div>
+      <div class="score-note">Since 14 May 2026</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-label">Correct</div>
+      <div class="score-value hit">${sc.hits}</div>
+      <div class="score-note">Outcome matched within horizon</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-label">Incorrect</div>
+      <div class="score-value miss">${sc.misses}</div>
+      <div class="score-note">Window expired, no action</div>
+    </div>
+    <div class="score-cell">
+      <div class="score-label">Accuracy</div>
+      <div class="score-value acc ${hitRate ? '' : 'null'}">${hitRate || '—'}</div>
+      <div class="score-note">${sc.resolved} resolved · ${sc.pending} tracking</div>
+    </div>
+  `;
+}
+
+function badge(status) {
+  if (status === 'hit')      return `<span class="badge badge-hit"><span class="badge-dot"></span>Hit</span>`;
+  if (status === 'miss')     return `<span class="badge badge-miss"><span class="badge-dot"></span>Miss</span>`;
+  return `<span class="badge badge-tracking"><span class="badge-dot"></span>Tracking</span>`;
+}
+
+function renderOutcome(p) {
+  if (p.status === 'tracking') {
+    const rem = daysUntil(p.deadline);
+    const deadlineStr = formatDate(p.deadline);
+    return `
+      <div class="pred-outcome-pending">Awaiting outcome</div>
+      <div class="pred-outcome-deadline">Deadline ${deadlineStr}${rem > 0 ? ` · ${rem}d remaining` : ' · overdue'}</div>
+    `;
+  }
+  const o = p.outcome;
+  return `
+    <div class="pred-outcome-text">${o.description}</div>
+    <div class="pred-outcome-date">${formatDate(o.date)}</div>
+    ${o.source_url ? `<div class="pred-outcome-source"><a href="${o.source_url}" target="_blank" rel="noopener">${o.source_label || 'View circular →'}</a></div>` : ''}
+  `;
+}
+
+function renderRows(predictions) {
+  return predictions.map(p => `
+    <tr class="pred-row">
+      <td>
+        <div class="pred-topic">${p.topic_label}</div>
+        <div class="pred-signal">${p.top_signal}</div>
+      </td>
+      <td class="hide-mobile">
+        <div class="pred-date">${formatDate(p.called_on)}</div>
+        <a class="git-proof" href="${GITHUB}${p.git_commit}" target="_blank" rel="noopener">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.01 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.82 1.1.82 2.22v3.29c0 .32.21.7.83.58A12 12 0 0 0 24 12C24 5.37 18.63 0 12 0z"/></svg>
+          git <span class="git-proof-hash">${p.git_commit.slice(0,7)}</span>
+        </a>
+      </td>
+      <td>
+        <div class="pred-prob">${p.probability}<span class="pred-prob-unit">%</span></div>
+        <div class="pred-horizon">${p.horizon_label}</div>
+      </td>
+      <td>${renderOutcome(p)}</td>
+      <td>${badge(p.status)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderSection(title, count, rows) {
+  return `
+    <div class="section-header">
+      <span class="section-title">${title}</span>
+      <span class="section-count">${count} prediction${count !== 1 ? 's' : ''}</span>
+    </div>
+    <table class="pred-table" style="margin-bottom:40px;">
+      <thead>
+        <tr>
+          <th style="width:35%">Topic &amp; leading signal</th>
+          <th class="hide-mobile" style="width:16%">Called on</th>
+          <th style="width:12%">Probability</th>
+          <th style="width:25%">Outcome</th>
+          <th style="width:12%">Status</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+async function init() {
+  try {
+    const r = await fetch('/data/track-record.json?t=' + Date.now());
+    const data = await r.json();
+
+    renderScorecard(data.scorecard);
+
+    const resolved = data.predictions.filter(p => p.status !== 'tracking');
+    const tracking = data.predictions.filter(p => p.status === 'tracking');
+
+    let html = '';
+    if (resolved.length) {
+      html += renderSection('Resolved predictions', resolved.length, renderRows(resolved));
+    }
+    if (tracking.length) {
+      html += renderSection('Currently tracking', tracking.length, renderRows(tracking));
+    }
+
+    document.getElementById('predictions-section').innerHTML = html;
+  } catch(e) {
+    document.getElementById('predictions-section').innerHTML =
+      `<div class="loading" style="color:#e05a4a;">Failed to load track record data.</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
