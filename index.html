@@ -1046,11 +1046,7 @@ function DirectionA({ tweak, predictions, liveData, ticker, session, profile, on
             </div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:20, padding:'0 22px', flex:1 }}>
-            <Meta T={T} dot label={updatedLabel}/>
-            <span style={{ fontFamily:mono, fontSize:11, color:T.border2, letterSpacing:'0.04em' }}>·</span>
-            <span style={{ fontFamily:mono, fontSize:11, color:T.text3, letterSpacing:'0.12em', textTransform:'uppercase' }}>
-              {nowIST.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Calcutta'}).toUpperCase()} · {nowIST.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Calcutta',hour12:false})} IST
-            </span>
+            <Meta T={T} dot label={`${nowIST.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Calcutta'}).toUpperCase()} · ${nowIST.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Calcutta',hour12:false})} IST`}/>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:9, padding:'0 22px', borderLeft:`1px solid ${T.border}` }}>
             <Pill T={T} label={tweak.dark?'LIGHT':'DARK'} onClick={onToggleDark}/>
