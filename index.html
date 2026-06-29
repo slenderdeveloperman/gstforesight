@@ -1582,19 +1582,13 @@ function App() {
     return 73;
   }, [liveTrackRecord]);
 
-  const goBack = () => setScreen(null);
-  const goAlert = (p) => { setActivePrediction(p); setScreen('alert'); };
-  const goPrediction = (p) => { setActivePrediction(p); setScreen('prediction'); };
-  const goQuery = (ctx) => { setQueryContext(ctx); setScreen('query'); };
-  const goSource = (s) => { setSourceContext(s); setScreen('source'); };
-  const goTrackRecord = (filter) => {
-    setTrackRecordFilter(filter || 'pending');
-    setScreen('trackRecord');
-    // Push a history entry so the browser Back button returns to the app home
-    // rather than exiting to whatever page the user came from.
-    window.history.pushState({ screen: 'trackRecord' }, '');
-  };
-  // Intercept browser Back button while on the track record screen.
+  const goBack = () => { setScreen(null); };
+  const goAlert = (p) => { setActivePrediction(p); setScreen('alert'); window.history.pushState({ screen: 'alert' }, ''); };
+  const goPrediction = (p) => { setActivePrediction(p); setScreen('prediction'); window.history.pushState({ screen: 'prediction' }, ''); };
+  const goQuery = (ctx) => { setQueryContext(ctx); setScreen('query'); window.history.pushState({ screen: 'query' }, ''); };
+  const goSource = (s) => { setSourceContext(s); setScreen('source'); window.history.pushState({ screen: 'source' }, ''); };
+  const goTrackRecord = (filter) => { setTrackRecordFilter(filter || 'pending'); setScreen('trackRecord'); window.history.pushState({ screen: 'trackRecord' }, ''); };
+  // Browser Back button pops the pushState entry and returns to app home.
   React.useEffect(() => {
     const onPop = () => setScreen(null);
     window.addEventListener('popstate', onPop);
@@ -1624,11 +1618,11 @@ function App() {
         profile={profile}
         onViewQuery={goQuery}
         onViewPrediction={goPrediction}
-        onViewSource={() => setScreen('source')}
+        onViewSource={() => { setScreen('source'); window.history.pushState({ screen: 'source' }, ''); }}
         onViewAlert={(p) => goAlert(p)}
-        onViewPricing={() => setScreen('pricing')}
-        onViewAuth={() => setScreen('auth')}
-        onViewHistory={() => setScreen('history')}
+        onViewPricing={() => { setScreen('pricing'); window.history.pushState({ screen: 'pricing' }, ''); }}
+        onViewAuth={() => { setScreen('auth'); window.history.pushState({ screen: 'auth' }, ''); }}
+        onViewHistory={() => { setScreen('history'); window.history.pushState({ screen: 'history' }, ''); }}
         onViewTrackRecord={goTrackRecord}
         trackRecordAccuracy={trackRecordAccuracy}
         onToggleDark={toggleDark}
