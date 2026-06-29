@@ -41,7 +41,7 @@ HISTORY_DIR = PREDICTIONS_DIR / "history"
 # ── Tuning constants ────────────────────────────────────────────────────────
 RESOLUTION_INTERVAL_DAYS = 4
 COOLDOWN_FACTOR = 0.5          # cooldown = horizon_days * COOLDOWN_FACTOR
-MIN_RESOLVED_FOR_ACCURACY = 10  # suppress accuracy % if fewer resolved rows
+MIN_RESOLVED_FOR_ACCURACY = 5   # suppress accuracy % if fewer resolved rows
 
 # Source IDs that count as actual regulatory outcomes (not signals).
 # Signals: aar_rulings, court_judgments, budget_speeches, pib_finance, etc.

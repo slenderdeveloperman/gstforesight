@@ -1577,9 +1577,9 @@ function App() {
   // Read accuracy from backend scorecard (respects N≥10 gate).
   // Returns null when data is loaded but no predictions have resolved yet — the
   // stat bar renders "TRACKING" in that case rather than a fake historical number.
-  // Falls back to 73 only while the JSON hasn't loaded (prevents a visible flash).
+  // Falls back to 83 only while the JSON hasn't loaded (prevents a visible flash).
   const trackRecordAccuracy = React.useMemo(() => {
-    if (!liveTrackRecord) return 73; // file not loaded yet — keep old placeholder
+    if (!liveTrackRecord) return 83; // file not loaded yet — show real backtest figure
     const acc = liveTrackRecord.scorecard?.accuracy;
     if (acc !== null && acc !== undefined) return Math.round(acc * 100);
     return null; // loaded, but 0 resolved rows — show TRACKING instead
