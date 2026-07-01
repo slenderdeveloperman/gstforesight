@@ -1490,6 +1490,10 @@ function App() {
     if (oauthError) {
       setScreen('auth');
       window.history.replaceState({}, '', window.location.pathname);
+      // Push an overlay entry so Back (on-screen or browser) returns to app
+      // home instead of leaving the site entirely — this screen is opened
+      // programmatically on load, so nothing pushed state for it yet.
+      window.history.pushState({ screen: 'auth' }, '');
     }
 
     // PKCE: ?code= is present after Google redirect; SDK exchanges it automatically.
@@ -1585,12 +1589,34 @@ function App() {
     return null; // loaded, but 0 resolved rows — show TRACKING instead
   }, [liveTrackRecord]);
 
-  const goBack = () => { setScreen(null); };
-  const goAlert = (p) => { setActivePrediction(p); setScreen('alert'); window.history.pushState({ screen: 'alert' }, ''); };
-  const goPrediction = (p) => { setActivePrediction(p); setScreen('prediction'); window.history.pushState({ screen: 'prediction' }, ''); };
-  const goQuery = (ctx) => { setQueryContext(ctx); setScreen('query'); window.history.pushState({ screen: 'query' }, ''); };
-  const goSource = (s) => { setSourceContext(s); setScreen('source'); window.history.pushState({ screen: 'source' }, ''); };
-  const goTrackRecord = (filter) => { setTrackRecordFilter(filter || 'pending'); setScreen('trackRecord'); window.history.pushState({ screen: 'trackRecord' }, ''); };
+  // Screen state is flat — there is only ever one "current" overlay, never a
+  // stack of previous ones, and every Back action (on-screen or browser)
+  // always returns straight to app home. History entries must mirror that:
+  // exactly one pushed entry while an overlay is open, zero at home. Pushing
+  // on every transition (including overlay -> overlay, e.g. prediction ->
+  // alert) used to grow the stack by one entry per hop, so a single Back
+  // press only unwound one level while the screen jumped straight to home —
+  // leaving "phantom" extra history entries that silently swallowed the next
+  // Back press. Push only when coming from home; replace otherwise, so depth
+  // never exceeds 1.
+  const pushOverlay = (name) => {
+    if (screen === null) window.history.pushState({ screen: name }, '');
+    else window.history.replaceState({ screen: name }, '');
+  };
+  // On-screen "← HOME" / back controls used to call setScreen(null) directly
+  // without touching history, leaving the pushed overlay entry orphaned in
+  // the stack. The next physical Back press would then pop that orphaned
+  // entry and silently no-op (screen was already home), making the back
+  // button appear broken. Routing through history.back() instead guarantees
+  // every pushOverlay() is consumed by exactly one Back action, and the
+  // popstate listener below is the single place that resets screen to null.
+  const goBack = () => { window.history.back(); };
+  const goAlert = (p) => { setActivePrediction(p); setScreen('alert'); pushOverlay('alert'); };
+  const goPrediction = (p) => { setActivePrediction(p); setScreen('prediction'); pushOverlay('prediction'); };
+  const goQuery = (ctx) => { setQueryContext(ctx); setScreen('query'); pushOverlay('query'); };
+  const goSource = (s) => { setSourceContext(s); setScreen('source'); pushOverlay('source'); };
+  const goTrackRecord = (filter) => { setTrackRecordFilter(filter || 'pending'); setScreen('trackRecord'); pushOverlay('trackRecord'); };
+  const goPricing = () => { setScreen('pricing'); pushOverlay('pricing'); };
   // Browser Back button pops the pushState entry and returns to app home.
   React.useEffect(() => {
     const onPop = () => setScreen(null);
@@ -1601,14 +1627,14 @@ function App() {
 
   const shell = (child) => <div style={{ width:'100vw', height:'100vh', background:T.bg }}>{child}</div>;
 
-  if (screen === 'query') return shell(<ScreenQueryResponse tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewSource={goSource} response={queryContext?.response} query={queryContext?.query}/>);
-  if (screen === 'prediction') return shell(<ScreenPredictionDetail tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} onViewAlert={(p) => goAlert(p)} prediction={activePrediction} trackRecord={liveTrackRecord?.predictions}/>);
-  if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} source={sourceContext}/>);
-  if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} prediction={activePrediction} session={session}/>);
+  if (screen === 'query') return shell(<ScreenQueryResponse tweak={tweak} onBack={goBack} onViewPricing={goPricing} onViewSource={goSource} response={queryContext?.response} query={queryContext?.query}/>);
+  if (screen === 'prediction') return shell(<ScreenPredictionDetail tweak={tweak} onBack={goBack} onViewPricing={goPricing} onViewAlert={(p) => goAlert(p)} prediction={activePrediction} trackRecord={liveTrackRecord?.predictions}/>);
+  if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={goPricing} source={sourceContext}/>);
+  if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={goPricing} prediction={activePrediction} session={session}/>);
   if (screen === 'pricing') return shell(<ScreenPricing tweak={tweak} onBack={goBack} session={session}/>);
-  if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} profile={profile} onSessionChange={setSession}/>);
-  if (screen === 'history') return shell(<ScreenHistory tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} session={session} onViewQuery={goQuery}/>);
-  if (screen === 'trackRecord') return shell(<ScreenTrackRecord tweak={tweak} onBack={goBack} onViewPricing={() => setScreen('pricing')} filter={trackRecordFilter} onFilterChange={setTrackRecordFilter} trackRecord={liveTrackRecord?.predictions} predictions={predictions} onViewPrediction={goPrediction}/>);
+  if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={goPricing} session={session} profile={profile} onSessionChange={setSession}/>);
+  if (screen === 'history') return shell(<ScreenHistory tweak={tweak} onBack={goBack} onViewPricing={goPricing} session={session} onViewQuery={goQuery}/>);
+  if (screen === 'trackRecord') return shell(<ScreenTrackRecord tweak={tweak} onBack={goBack} onViewPricing={goPricing} filter={trackRecordFilter} onFilterChange={setTrackRecordFilter} trackRecord={liveTrackRecord?.predictions} predictions={predictions} onViewPrediction={goPrediction}/>);
 
   return (
     <div style={{ width:'100vw', height:'100vh', background:T.bg }}>
@@ -1621,11 +1647,11 @@ function App() {
         profile={profile}
         onViewQuery={goQuery}
         onViewPrediction={goPrediction}
-        onViewSource={() => { setScreen('source'); window.history.pushState({ screen: 'source' }, ''); }}
+        onViewSource={goSource}
         onViewAlert={(p) => goAlert(p)}
-        onViewPricing={() => { setScreen('pricing'); window.history.pushState({ screen: 'pricing' }, ''); }}
-        onViewAuth={() => { setScreen('auth'); window.history.pushState({ screen: 'auth' }, ''); }}
-        onViewHistory={() => { setScreen('history'); window.history.pushState({ screen: 'history' }, ''); }}
+        onViewPricing={goPricing}
+        onViewAuth={() => { setScreen('auth'); pushOverlay('auth'); }}
+        onViewHistory={() => { setScreen('history'); pushOverlay('history'); }}
         onViewTrackRecord={goTrackRecord}
         trackRecordAccuracy={trackRecordAccuracy}
         onToggleDark={toggleDark}
