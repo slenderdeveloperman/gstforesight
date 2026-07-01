@@ -842,14 +842,25 @@ class PIBFinanceScraper(BaseScraper):
             if len(text) < 100:
                 return "", None, ""
 
-            # Extract date from "Posted On: DD MON YYYY" embedded in content
+            # Extract date/time embedded in content, e.g. "30 JUN 2026 5:20PM by PIB Delhi".
+            # PIB's date label is inconsistent — older pages say "Posted On:", the
+            # current template uses the Hindi label "प्रविष्टि तिथि:" instead — so
+            # match on the date/time/"by PIB" pattern itself rather than the label,
+            # which works regardless of which label the page happens to use.
             date = None
-            dm = re.search(r"Posted On:\s*(\d{1,2} \w+ \d{4})", text)
+            title = ""
+            dm = re.search(
+                r"(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})\s+\d{1,2}:\d{2}\s*[AP]M\s+by\s+PIB",
+                text, re.IGNORECASE,
+            )
             if dm:
                 date = self._parse_pib_date(dm.group(1))
+                # Title is everything before the date label (English or Hindi)
+                title = text[:dm.start()]
+                title = re.split(r"(?:Posted On|प्रविष्टि तिथि)\s*:?\s*$", title)[0].strip()[:200]
 
-            # Extract title: first line before "Posted On"
-            title = text.split("Posted On")[0].strip()[:200] if "Posted On" in text else text[:100]
+            if not title:
+                title = text[:100]
             return text, date, title
         except Exception:
             return "", None, ""
