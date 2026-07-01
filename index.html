@@ -323,24 +323,23 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
   const mono = `'IBM Plex Mono',monospace`;
   const sans = `'IBM Plex Sans',system-ui,sans-serif`;
   const serif = `'Playfair Display',serif`;
-  const probColor = T.warn;
-
-  const mockChunks = [
-    { src:'cbic_circ_178', date:'03 AUG 2022', score:0.91, text:'…liquidated damages and penal charges shall not be treated as supply for consideration … but where such payments include service of refraining or tolerating an act, GST shall be applicable…' },
-    { src:'aar_mh_33',     date:'14 NOV 2024', score:0.88, text:'…input tax credit on promotional schemes structured as buy-one-get-one cannot be regarded as gifts within the meaning of Section 17(5)(h)…' },
-    { src:'aar_kar_19',    date:'28 JAN 2025', score:0.84, text:'…distribution of free samples to medical professionals does not constitute a "supply" and consequent ITC reversal under Rule 42 is not warranted…' },
-    { src:'aar_dl_11',     date:'06 MAR 2025', score:0.79, text:'…sponsorship and event marketing services received are eligible for ITC subject to the proviso that such services are received in the course or furtherance of business…' },
-    { src:'icai_pbm_2025', date:'01 OCT 2025', score:0.72, text:'…recommend explicit clarification under Section 17(5) to bring uniformity in treatment of marketing and promotional spends across sectors…' },
-  ];
 
   const displayQuery = query || `What's the outlook for ITC on marketing expenses?`;
+  // hasError / liveAnswer / hasSources are mutually informative but distinct:
+  // an errored request has no answer; a successful request can still return
+  // zero sources. Each state gets its own honest rendering below — none of
+  // them fall back to the old fabricated 52%/P-2540/mockChunks demo content,
+  // which used to render for ANY non-ideal response (error, empty sources,
+  // even a bare {} object) as if it were a real answer to the user's query.
+  const hasError = !!(response && response.errorMsg);
   const liveAnswer = response && !response.loading && !response.errorMsg && response.answer;
   const liveSources = response?.sources || [];
-  const hasLive = !!(liveAnswer && liveSources.length > 0);
+  const hasLive = !!liveAnswer;
+  const hasSources = liveSources.length > 0;
   const remainingQueries = response?.remaining_queries ?? null;
 
   return (
-    <ScreenChrome T={T} tweak={tweak} breadcrumb={['QUERY']} sub={hasLive ? `${liveSources.length} sources retrieved · Sarvam-M` : 'Returned in 1.42s · 8 chunks retrieved · Sarvam-M generation'} onBack={onBack} onViewPricing={onViewPricing}>
+    <ScreenChrome T={T} tweak={tweak} breadcrumb={['QUERY']} sub={hasLive ? (hasSources ? `${liveSources.length} sources retrieved · Sarvam-M` : 'Sarvam-M generation · no sources returned') : (hasError ? 'Request failed' : 'Awaiting response')} onBack={onBack} onViewPricing={onViewPricing}>
       <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 460px', minHeight:0 }}>
         <div style={{ borderRight:`1px solid ${T.border}`, display:'flex', flexDirection:'column', minHeight:0 }}>
           <div style={{ padding:'24px 32px 18px', borderBottom:`1px solid ${T.border}` }}>
@@ -365,7 +364,7 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
                     </div>
                   );
                 })()}
-                {liveSources.length > 0 && (
+                {hasSources && (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:12, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
                     <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.1em', marginRight:4 }}>SOURCES</span>
                     {liveSources.map(s => <span key={s.source_id} style={{ fontFamily:mono, fontSize:9, color:T.text2, padding:'2px 6px', border:`1px solid ${T.border}`, background:T.bg3 }}>{s.source_id}</span>)}
@@ -379,43 +378,24 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
                   </div>
                 )}
               </>
+            ) : hasError ? (
+              <div style={{ fontFamily:mono, fontSize:12, color:T.danger, lineHeight:1.7, padding:'12px 14px', border:`1px solid ${T.danger}55`, background:`${T.danger}0d` }}>
+                {response.errorMsg || 'An error occurred while processing this query.'}
+              </div>
             ) : (
-              <>
-                <div style={{ display:'flex', gap:24, alignItems:'flex-end', marginBottom:22 }}>
-                  <div>
-                    <div style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.12em', marginBottom:4 }}>PROBABILITY OF CHANGE</div>
-                    <div style={{ fontFamily:mono, fontSize:56, color:probColor, fontWeight:600, lineHeight:1 }}>52<span style={{ fontSize:24, color:T.text3 }}>%</span></div>
-                  </div>
-                  <div style={{ borderLeft:`1px solid ${T.border}`, paddingLeft:24, paddingBottom:4 }}>
-                    <div style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.12em', marginBottom:4 }}>HORIZON</div>
-                    <div style={{ fontFamily:mono, fontSize:16, color:T.accent, marginBottom:4 }}>2–3 quarters</div>
-                    <div style={{ fontFamily:mono, fontSize:10, color:T.text3 }}>≤ 270 days</div>
-                  </div>
-                  <div style={{ borderLeft:`1px solid ${T.border}`, paddingLeft:24, paddingBottom:4 }}>
-                    <div style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.12em', marginBottom:4 }}>MATCHED PREDICTION</div>
-                    <div style={{ fontFamily:sans, fontSize:14, color:T.text }}>P-2540 · ITC — Marketing & Promotional Spend</div>
-                    <div style={{ fontFamily:mono, fontSize:10, color:T.success, marginTop:4 }}>▲ 6 over 30 days</div>
-                  </div>
-                </div>
-                <div style={{ fontFamily:serif, fontSize:17, color:T.text, lineHeight:1.55, marginBottom:22, fontWeight:300 }}>
-                  The corpus suggests a <strong style={{ color:T.text, fontWeight:600 }}>moderate likelihood</strong> of CBIC clarification on ITC eligibility for marketing and promotional spends within the next 2–3 quarters.
-                </div>
-                <SectionLabel T={T}>WHAT TO WATCH</SectionLabel>
-                <div style={{ background:T.bg2, border:`1px solid ${T.border}`, padding:'12px 14px', fontSize:12.5, color:T.text2, lineHeight:1.7 }}>
-                  <div style={{ marginBottom:4, paddingLeft:12, position:'relative' }}><span style={{ position:'absolute', left:0, color:T.warn }}>›</span> Bombay HC appeal against AAR Maharashtra 33/2024 — listed for hearing in Q3 FY26.</div>
-                  <div style={{ paddingLeft:12, position:'relative' }}><span style={{ position:'absolute', left:0, color:T.warn }}>›</span> CBIC notification page for explanatory circular on Section 17(5)(h) interpretation.</div>
-                </div>
-              </>
+              <div style={{ fontFamily:mono, fontSize:12, color:T.text3, lineHeight:1.7 }}>
+                No response available for this query.
+              </div>
             )}
           </div>
         </div>
         <div style={{ display:'flex', flexDirection:'column', minHeight:0, background:T.bg2 }}>
           <div style={{ padding:'9px 16px', borderBottom:`1px solid ${T.border}`, fontFamily:mono, fontSize:10, color:T.text3, letterSpacing:'0.1em', textTransform:'uppercase', flexShrink:0, display:'flex', justifyContent:'space-between' }}>
-            <span>Retrieved Chunks · {hasLive ? liveSources.length : 8}</span>
+            <span>Retrieved Chunks · {hasSources ? liveSources.length : 0}</span>
             <span style={{ color:T.accent2 }}>SORTED BY RELEVANCE</span>
           </div>
           <div style={{ overflowY:'auto', flex:1, padding:14 }}>
-            {hasLive ? liveSources.map((s,i) => (
+            {hasSources ? liveSources.map((s,i) => (
               <div key={i} onClick={() => onViewSource && onViewSource(s)} style={{ background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', marginBottom:8, cursor:'pointer' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6 }}>
                   <span style={{ fontFamily:mono, fontSize:9.5, color:T.accent, letterSpacing:'0.06em' }}>{s.source_id}</span>
@@ -423,15 +403,11 @@ function ScreenQueryResponse({ tweak, onBack, onViewPricing, onViewSource, respo
                 </div>
                 <div style={{ fontSize:11, color:T.text2, lineHeight:1.55, fontStyle:'italic' }}>{s.excerpt || ''}</div>
               </div>
-            )) : mockChunks.map((c,i) => (
-              <div key={i} style={{ background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', marginBottom:8 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6 }}>
-                  <span style={{ fontFamily:mono, fontSize:9.5, color:T.accent, letterSpacing:'0.06em' }}>{c.src}</span>
-                  <span style={{ fontFamily:mono, fontSize:9, color:T.text3, letterSpacing:'0.04em' }}>{c.date} · sim {c.score.toFixed(2)}</span>
-                </div>
-                <div style={{ fontSize:11, color:T.text2, lineHeight:1.55, fontStyle:'italic' }}>{c.text}</div>
+            )) : (
+              <div style={{ fontFamily:mono, fontSize:11, color:T.text3, padding:'10px 12px' }}>
+                {hasError ? 'No sources — request failed.' : 'No sources retrieved for this query.'}
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
