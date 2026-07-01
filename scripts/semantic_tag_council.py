@@ -123,7 +123,16 @@ def sarvam_classify(excerpt: str, api_key: str) -> list[str]:
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.0,
-        "max_tokens": 3000,
+        # sarvam-30b is a CoT model — reasoning tokens are billed against
+        # max_tokens before the final answer is emitted in
+        # choices[0].message.content, so a low cap regularly finishes with
+        # finish_reason="length" and content=None (silently dropping the
+        # classification for that excerpt). 3000 was well below the
+        # documented safe minimum of ~4000. 4096 is the hard ceiling for the
+        # "starter" Sarvam subscription tier (verified via live 400 response:
+        # "max_tokens (4500) exceeds the maximum allowed ... (starter): 4096")
+        # — this is the most headroom available without a plan upgrade.
+        "max_tokens": 4096,
     }).encode()
 
     req = urllib.request.Request(

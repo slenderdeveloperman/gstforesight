@@ -65,7 +65,13 @@ topics:
 sources:
   cbic_circulars:
     name: CBIC Circulars
-    url: https://cbic.gov.in/htdocs-cbic/gst/circulars-cgst-english.htm
+    # cbic.gov.in/htdocs-cbic/gst/circulars-cgst-english.htm is an Angular SPA
+    # that returns shell HTML server-side (see scrapers/sources.py
+    # CBICCircularScraper docstring) — the scraper actually reads
+    # cbic-gst.gov.in, the legacy static mirror. Documented here for parity
+    # with the real scrape target; this field is descriptive only and is not
+    # read at runtime (CBICCircularScraper.BASE_URL is hardcoded).
+    url: https://cbic-gst.gov.in/
     type: html_scraper
     signal_type: historical_pattern
     update_schedule: weekly
@@ -83,7 +89,11 @@ sources:
 
   aar_rulings:
     name: Advance Authority Rulings
-    url: https://cbic-gst.gov.in/advance-ruling.html
+    # Migrated 2024-10 from cbic-gst.gov.in/advance-ruling.html, which now
+    # 404s (verified live). AARRulingScraper in scrapers/sources.py was
+    # updated at the time; this config field had drifted and still pointed
+    # at the dead URL until this fix. Descriptive only — not read at runtime.
+    url: https://gstcouncil.gov.in/authority-for-advance-ruling
     type: html_scraper
     signal_type: judicial_pressure
     update_schedule: weekly
@@ -99,9 +109,16 @@ sources:
     weight: 0.15
     active: true
 
-  icai_memoranda:
-    name: ICAI Pre-Budget Memoranda
-    url: https://icai.org/category/pre-budget-memoranda
+  # Key renamed from icai_memoranda to icai_representations to match
+  # ICAIRepresentationScraper.source_id in scrapers/sources.py — base.py
+  # documents that this key "must match key in config/sources.yaml", and it
+  # had drifted (source_id engine.py/tagger.py match against is
+  # icai_representations, not icai_memoranda). URL updated to the actual
+  # idtc.icai.org pages the scraper reads (icai.org/category/... is not a
+  # real ICAI IDTC path). Descriptive only — not read at runtime.
+  icai_representations:
+    name: ICAI Pre-Budget Memoranda & Representations
+    url: https://idtc.icai.org/budget-memorandum.html
     type: html_scraper
     signal_type: industry_demand
     update_schedule: annual
@@ -110,7 +127,10 @@ sources:
 
   pib_finance:
     name: PIB Finance Ministry Press Releases
-    url: https://pib.gov.in/allRel.aspx?mincode=47
+    # PIBFinanceScraper doesn't use a listing page — it enumerates PRIDs from
+    # a PIB RSS anchor (see scrapers/sources.py). This is the RSS seed URL,
+    # for reference. Descriptive only — not read at runtime.
+    url: https://pib.gov.in/RssMain.aspx?ModId=6&Lang=3&Regid=3
     type: pib_scraper
     signal_type: government_forward_signal
     update_schedule: daily
