@@ -74,6 +74,7 @@ def find_moved_topics(prev: dict, curr: dict, topic_alert_map: dict) -> list[dic
                     "topic_label": curr_pred.get("topic_label", topic_id),
                     "prediction_id": curr_pred.get("topic_id", ""),
                     "horizon_label": curr_pred.get("horizon_label", ""),
+                    "threshold_delta": sub["threshold_delta"],
                 })
 
     return alerts_to_send
