@@ -157,22 +157,30 @@ class TopicTagger:
             (doc_dict.get("title") or "") + " " +
             (doc_dict.get("content") or "")
         )
-        # Truncate before regex to prevent ReDoS on oversized scraped documents
-        text = raw_text[:_MAX_TAG_CHARS].lower()
+        text = raw_text.lower()
 
         topic_scores = {}
 
-        for topic_id, patterns in TOPIC_KEYWORDS.items():
-            score = 0
-            for pattern in patterns:
-                try:
-                    matches = re.findall(pattern, text, re.IGNORECASE)
-                    score += len(matches)
-                except re.error:
-                    # Malformed pattern — skip rather than crash
-                    pass
-            if score > 0:
-                topic_scores[topic_id] = score
+        # Scan in bounded windows rather than truncating to the first
+        # _MAX_TAG_CHARS chars — GST Council minutes and other large PDFs
+        # routinely run 300K+ chars, so a flat truncation silently ignores
+        # everything past the first ~50K chars (roughly the first 14% of a
+        # council minutes doc). Each regex call still only ever sees a
+        # bounded _MAX_TAG_CHARS-sized window, so the ReDoS protection this
+        # cap exists for is preserved.
+        for window_start in range(0, max(len(text), 1), _MAX_TAG_CHARS):
+            window = text[window_start:window_start + _MAX_TAG_CHARS]
+            for topic_id, patterns in TOPIC_KEYWORDS.items():
+                score = 0
+                for pattern in patterns:
+                    try:
+                        matches = re.findall(pattern, window, re.IGNORECASE)
+                        score += len(matches)
+                    except re.error:
+                        # Malformed pattern — skip rather than crash
+                        pass
+                if score > 0:
+                    topic_scores[topic_id] = topic_scores.get(topic_id, 0) + score
 
         matched_topics = [
             t for t, s in sorted(topic_scores.items(), key=lambda x: -x[1])
