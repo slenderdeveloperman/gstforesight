@@ -66,25 +66,10 @@ export default async function handler(request) {
     return r({ error: 'config_error' }, 500);
   }
 
-  // Log partial values to confirm env vars are correct without leaking secrets
   const authToken = btoa(`${rzpKeyId}:${rzpSecret}`);
-  console.log('[create-subscription] env check', {
-    keyId: rzpKeyId.slice(0, 12) + '…' + rzpKeyId.slice(-4),
-    secretLen: rzpSecret.length,
-    secretPrefix: rzpSecret.slice(0, 8),
-    planId,
-    authPrefix: authToken.slice(0, 16),  // first 16 chars of base64 to verify btoa
-  });
 
   const userInfo = await getUserInfo(request, supabaseUrl, supabaseKey);
   if (!userInfo) return r({ error: 'unauthorized', message: 'Sign in to subscribe.' }, 401);
-
-  // Probe a basic endpoint to verify credentials work at all
-  const probeRes = await fetch('https://api.razorpay.com/v1/payments?count=1', {
-    headers: { 'Authorization': `Basic ${authToken}`, 'Accept': 'application/json' },
-  });
-  const probeText = await probeRes.text();
-  console.log('[create-subscription] probe /v1/payments', probeRes.status, probeText.slice(0, 200));
 
   // Verify plan exists before attempting subscription creation
   let planCheckRes;

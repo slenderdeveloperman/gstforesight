@@ -45,8 +45,13 @@ async function post(body, headers = {}) {
 async function runBodySizeTests() {
   console.log('\n[M5] Body size guard');
 
-  await test('rejects body over 8 KB', async () => {
-    const bigBody = JSON.stringify({ query: 'a'.repeat(9000) });
+  // api/query.js sets MAX_BODY_BYTES = 10 * 1024 (10 KB, intentionally raised
+  // from 8 KB to accommodate the recent_context field — see the comment on
+  // MAX_BODY_BYTES). This test must send a body that exceeds that actual
+  // limit, or it will assert a 413 that the (correct) implementation never
+  // returns.
+  await test('rejects body over 10 KB', async () => {
+    const bigBody = JSON.stringify({ query: 'a'.repeat(11000) });
     const res = await fetch(QUERY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': String(bigBody.length) },
@@ -57,7 +62,7 @@ async function runBodySizeTests() {
     assert(data.error === 'payload_too_large', `Expected payload_too_large, got ${data.error}`);
   });
 
-  await test('accepts body under 8 KB', async () => {
+  await test('accepts body under 10 KB', async () => {
     const res = await post({ query: 'What is the GST rate on textiles?' });
     assert(res.status !== 413, `Got unexpected 413 for normal request`);
   });
