@@ -667,7 +667,7 @@ function ScreenSourceDoc({ tweak, onBack, onViewPricing, source }) {
 }
 
 // ── Screen: Alert Setup ───────────────────────────────────────────────────────
-function ScreenAlertSetup({ tweak, onBack, onViewPricing, prediction, session }) {
+function ScreenAlertSetup({ tweak, onBack, onViewPricing, onViewAuth, prediction, session }) {
   const T = GST_THEME[tweak.dark?'dark':'light'];
   const mono = `'IBM Plex Mono',monospace`;
   const sans = `'IBM Plex Sans',system-ui,sans-serif`;
@@ -677,7 +677,10 @@ function ScreenAlertSetup({ tweak, onBack, onViewPricing, prediction, session })
   const [saveMsg, setSaveMsg] = React.useState('');
 
   const handleSaveAlert = async () => {
-    if (!session) { onViewPricing && onViewPricing(); return; }
+    // The gate here is being signed in, not being on Pro — routing to
+    // Pricing sent logged-out users to buy a plan instead of the sign-in
+    // screen the adjacent "Sign in to save alerts" message promises.
+    if (!session) { onViewAuth && onViewAuth(); return; }
     setSaveState('saving');
     try {
       const res = await fetch('/api/subscribe', {
@@ -1617,6 +1620,7 @@ function App() {
   const goSource = (s) => { setSourceContext(s); setScreen('source'); pushOverlay('source'); };
   const goTrackRecord = (filter) => { setTrackRecordFilter(filter || 'pending'); setScreen('trackRecord'); pushOverlay('trackRecord'); };
   const goPricing = () => { setScreen('pricing'); pushOverlay('pricing'); };
+  const goAuth = () => { setScreen('auth'); pushOverlay('auth'); };
   // Browser Back button pops the pushState entry and returns to app home.
   React.useEffect(() => {
     const onPop = () => setScreen(null);
@@ -1630,7 +1634,7 @@ function App() {
   if (screen === 'query') return shell(<ScreenQueryResponse tweak={tweak} onBack={goBack} onViewPricing={goPricing} onViewSource={goSource} response={queryContext?.response} query={queryContext?.query}/>);
   if (screen === 'prediction') return shell(<ScreenPredictionDetail tweak={tweak} onBack={goBack} onViewPricing={goPricing} onViewAlert={(p) => goAlert(p)} prediction={activePrediction} trackRecord={liveTrackRecord?.predictions}/>);
   if (screen === 'source') return shell(<ScreenSourceDoc tweak={tweak} onBack={goBack} onViewPricing={goPricing} source={sourceContext}/>);
-  if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={goPricing} prediction={activePrediction} session={session}/>);
+  if (screen === 'alert') return shell(<ScreenAlertSetup tweak={tweak} onBack={goBack} onViewPricing={goPricing} onViewAuth={goAuth} prediction={activePrediction} session={session}/>);
   if (screen === 'pricing') return shell(<ScreenPricing tweak={tweak} onBack={goBack} session={session}/>);
   if (screen === 'auth') return shell(<ScreenAuth tweak={tweak} onBack={goBack} onViewPricing={goPricing} session={session} profile={profile} onSessionChange={setSession}/>);
   if (screen === 'history') return shell(<ScreenHistory tweak={tweak} onBack={goBack} onViewPricing={goPricing} session={session} onViewQuery={goQuery}/>);
@@ -1650,7 +1654,7 @@ function App() {
         onViewSource={goSource}
         onViewAlert={(p) => goAlert(p)}
         onViewPricing={goPricing}
-        onViewAuth={() => { setScreen('auth'); pushOverlay('auth'); }}
+        onViewAuth={goAuth}
         onViewHistory={() => { setScreen('history'); pushOverlay('history'); }}
         onViewTrackRecord={goTrackRecord}
         trackRecordAccuracy={trackRecordAccuracy}
