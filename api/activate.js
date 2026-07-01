@@ -15,6 +15,18 @@ function json(body, status = 200) {
   });
 }
 
+// Constant-time string comparison — avoids leaking signature bytes via timing.
+// A naive `===` short-circuits on the first mismatched character, which in
+// theory lets a network attacker recover the valid signature byte-by-byte.
+function timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 // Razorpay sends X-Razorpay-Signature: hex(HMAC-SHA256(body, webhook_secret))
 async function verifyRazorpaySignature(body, signature, secret) {
   const encoder = new TextEncoder();
@@ -27,7 +39,7 @@ async function verifyRazorpaySignature(body, signature, secret) {
   );
   const mac = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
   const hex = Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return hex === signature;
+  return timingSafeEqual(hex, signature);
 }
 
 // Maps Razorpay plan IDs → DB plan names. Add new plans here.
